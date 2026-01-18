@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Test - 24x7 Cafe</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        #console-output {
+            background: #000;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔥 Firebase Connection Test</h1>
+        <p>This page will test if Firebase is properly connected to your 24x7 Cafe website.</p>
+        
+        <div id="firebase-status" class="status info">
+            ⏳ Checking Firebase connection...
+        </div>
+        
+        <div id="auth-status" class="status info">
+            ⏳ Checking Authentication...
+        </div>
+        
+        <div id="firestore-status" class="status info">
+            ⏳ Checking Firestore Database...
+        </div>
+        
+        <h3>Test Actions:</h3>
+        <button onclick="testSignup()">Test Signup</button>
+        <button onclick="testLogin()">Test Login</button>
+        <button onclick="testFirestore()">Test Firestore Write</button>
+        <button onclick="clearConsole()">Clear Console</button>
+        
+        <div id="console-output"></div>
+    </div>
+
+    <!-- Firebase CDN - Version 8 -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    
+    <script>
+        // Console output element
+        const consoleOutput = document.getElementById('console-output');
+        
+        // Override console.log to show in page
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            logToPage('LOG: ' + args.join(' '), '#00ff00');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            logToPage('ERROR: ' + args.join(' '), '#ff0000');
+        };
+        
+        function logToPage(message, color = '#00ff00') {
+            const timestamp = new Date().toLocaleTimeString();
+            consoleOutput.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        function clearConsole() {
+            consoleOutput.innerHTML = '';
+        }
+        
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCNN5gijXy7DEi9YeY4shCYvu6ktMbkIDM",
+            authDomain: "cafe-24-7-bfb39.firebaseapp.com",
+            projectId: "cafe-24-7-bfb39",
+            storageBucket: "cafe-24-7-bfb39.firebasestorage.app",
+            messagingSenderId: "164822694308",
+            appId: "1:164822694308:web:79c41a8fa157ed4906e931",
+            measurementId: "G-QHW0PYZXEX"
+        };
+        
+        // Test Firebase initialization
+        function testFirebaseInit() {
+            const firebaseStatus = document.getElementById('firebase-status');
+            
+            if (typeof firebase === 'undefined') {
+                firebaseStatus.className = 'status error';
+                firebaseStatus.innerHTML = '❌ Firebase SDK not loaded from CDN';
+                console.error('Firebase SDK not loaded');
+                return false;
+            }
+            
+            try {
+                firebase.initializeApp(firebaseConfig);
+                firebaseStatus.className = 'status success';
+                firebaseStatus.innerHTML = '✅ Firebase initialized successfully';
+                console.log('Firebase initialized successfully');
+                return true;
+            } catch (error) {
+                firebaseStatus.className = 'status error';
+                firebaseStatus.innerHTML = '❌ Firebase initialization failed: ' + error.message;
+                console.error('Firebase initialization error:', error);
+                return false;
+            }
+        }
+        
+        // Test Authentication
+        function testAuth() {
+            const authStatus = document.getElementById('auth-status');
+            
+            try {
+                const auth = firebase.auth();
+                authStatus.className = 'status success';
+                authStatus.innerHTML = '✅ Firebase Authentication ready';
+                console.log('Firebase Auth initialized');
+                
+                auth.onAuthStateChanged((user) => {
+                    if (user) {
+                        console.log('User signed in:', user.email);
+                    } else {
+                        console.log('No user signed in');
+                    }
+                });
+                
+                return true;
+            } catch (error) {
+                authStatus.className = 'status error';
+                authStatus.innerHTML = '❌ Firebase Authentication failed: ' + error.message;
+                console.error('Auth error:', error);
+                return false;
+            }
+        }
+        
+        // Test Firestore
+        function testFirestoreConnection() {
+            const firestoreStatus = document.getElementById('firestore-status');
+            
+            try {
+                const db = firebase.firestore();
+                
+                // Test read access
+                db.collection('test').limit(1).get()
+                    .then(() => {
+                        firestoreStatus.className = 'status success';
+                        firestoreStatus.innerHTML = '✅ Firestore Database connected';
+                        console.log('Firestore connection successful');
+                    })
+                    .catch((error) => {
+                        firestoreStatus.className = 'status error';
+                        firestoreStatus.innerHTML = '❌ Firestore connection failed: ' + error.message;
+                        console.error('Firestore error:', error);
+                    });
+                
+                return true;
+            } catch (error) {
+                firestoreStatus.className = 'status error';
+                firestoreStatus.innerHTML = '❌ Firestore initialization failed: ' + error.message;
+                console.error('Firestore init error:', error);
+                return false;
+            }
+        }
+        
+        // Test functions
+        async function testSignup() {
+            try {
+                const auth = firebase.auth();
+                const testEmail = 'test' + Date.now() + '@example.com';
+                const testPassword = 'test123456';
+                
+                console.log('Testing signup with:', testEmail);
+                
+                const userCredential = await auth.createUserWithEmailAndPassword(testEmail, testPassword);
+                console.log('✅ Signup successful:', userCredential.user.email);
+                
+                // Clean up - delete the test user
+                await userCredential.user.delete();
+                console.log('✅ Test user cleaned up');
+                
+            } catch (error) {
+                console.error('❌ Signup test failed:', error.message);
+            }
+        }
+        
+        async function testLogin() {
+            try {
+                const auth = firebase.auth();
+                
+                // First create a test user
+                const testEmail = 'test' + Date.now() + '@example.com';
+                const testPassword = 'test123456';
+                
+                console.log('Creating test user for login test...');
+                const userCredential = await auth.createUserWithEmailAndPassword(testEmail, testPassword);
+                
+                // Sign out
+                await auth.signOut();
+                console.log('Signed out, now testing login...');
+                
+                // Sign back in
+                const loginCredential = await auth.signInWithEmailAndPassword(testEmail, testPassword);
+                console.log('✅ Login successful:', loginCredential.user.email);
+                
+                // Clean up
+                await loginCredential.user.delete();
+                console.log('✅ Test user cleaned up');
+                
+            } catch (error) {
+                console.error('❌ Login test failed:', error.message);
+            }
+        }
+        
+        async function testFirestore() {
+            try {
+                const db = firebase.firestore();
+                const testData = {
+                    message: 'Hello from Firebase test!',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    testId: Date.now()
+                };
+                
+                console.log('Testing Firestore write...');
+                
+                const docRef = await db.collection('test').add(testData);
+                console.log('✅ Firestore write successful, document ID:', docRef.id);
+                
+                // Read it back
+                const doc = await docRef.get();
+                if (doc.exists) {
+                    console.log('✅ Firestore read successful:', doc.data());
+                } else {
+                    console.error('❌ Document not found after write');
+                }
+                
+                // Clean up
+                await docRef.delete();
+                console.log('✅ Test document cleaned up');
+                
+            } catch (error) {
+                console.error('❌ Firestore test failed:', error.message);
+            }
+        }
+        
+        // Run tests on page load
+        window.addEventListener('load', () => {
+            console.log('🧪 Starting Firebase tests...');
+            
+            setTimeout(() => {
+                if (testFirebaseInit()) {
+                    testAuth();
+                    testFirestoreConnection();
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 // Firebase Configuration and Initialization
-// Your actual Firebase config
+// Firebase v8 SDK Configuration
 
 const firebaseConfig = {
   apiKey: "AIzaSyCNN5gijXy7DEi9YeY4shCYvu6ktMbkIDM",
@@ -14,6 +14,7 @@ const firebaseConfig = {
 // Check if Firebase is loaded
 if (typeof firebase === 'undefined') {
   console.error('❌ Firebase SDK not loaded! Check if CDN scripts are working.');
+  alert('Firebase not loaded. Please check your internet connection and refresh the page.');
 } else {
   try {
     // Initialize Firebase
@@ -29,7 +30,10 @@ if (typeof firebase === 'undefined') {
     window.firebaseDB = db;
     window.firebaseStorage = storage;
     
-    // Enable offline persistence with better error handling
+    console.log('🔥 Firebase initialized successfully!');
+    console.log('📊 Project ID:', firebaseConfig.projectId);
+    
+    // Test Firestore connection
     db.enablePersistence({ synchronizeTabs: true })
       .then(() => {
         console.log('✅ Firestore offline persistence enabled');
@@ -44,9 +48,7 @@ if (typeof firebase === 'undefined') {
         }
       });
     
-    console.log('🔥 Firebase initialized successfully!');
-    
-    // Test connection
+    // Test auth connection
     auth.onAuthStateChanged((user) => {
       if (user) {
         console.log('✅ User authenticated:', user.email);
@@ -55,7 +57,17 @@ if (typeof firebase === 'undefined') {
       }
     });
     
+    // Test Firestore connection
+    db.collection('test').limit(1).get()
+      .then(() => {
+        console.log('✅ Firestore connection successful');
+      })
+      .catch((error) => {
+        console.error('❌ Firestore connection failed:', error);
+      });
+    
   } catch (error) {
     console.error('❌ Firebase initialization error:', error);
+    alert('Firebase initialization failed: ' + error.message);
   }
 }
