@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu - 24x7 Cafe</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/menu.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2>24x7</h2>
+                <span>Cafe</span>
+            </div>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="menu.html" class="nav-link active">Menu</a>
+                <a href="orders.html" class="nav-link">My Orders</a>
+                <a href="cart.html" class="nav-link">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-count">0</span>
+                </a>
+                <a href="login.html" class="nav-link login-btn">Login</a>
+            </div>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Menu Header -->
+    <section class="menu-header">
+        <div class="container">
+            <h1>Our Menu</h1>
+            <p>Delicious food available 24/7 for college students</p>
+        </div>
+    </section>
+
+    <!-- Menu Categories -->
+    <section class="menu-section">
+        <div class="container">
+            <!-- Category Filter -->
+            <div class="category-filter">
+                <button class="filter-btn active" data-category="all">All Items</button>
+                <button class="filter-btn" data-category="noodles">Noodles</button>
+                <button class="filter-btn" data-category="veg-manchurian-gravy">Veg Manchurian & Gravy</button>
+                <button class="filter-btn" data-category="rolls">Rolls</button>
+                <button class="filter-btn" data-category="momos">Momos</button>
+                <button class="filter-btn" data-category="rice">Rice</button>
+                <button class="filter-btn" data-category="extra">Extra</button>
+                <button class="filter-btn" data-category="omlet-maggi">Om Let & Maggi</button>
+                <button class="filter-btn" data-category="parathas">Parathas</button>
+                <button class="filter-btn" data-category="drinks-snacks">Drinks & Snacks</button>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search for food items...">
+                <i class="fas fa-search"></i>
+            </div>
+
+            <!-- Menu Items Grid -->
+            <div class="menu-grid" id="menuGrid">
+                <!-- Items will be loaded dynamically -->
+            </div>
+
+            <!-- Loading Spinner -->
+            <div class="loading" id="loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading menu items...</p>
+            </div>
+
+            <!-- No Results -->
+            <div class="no-results" id="noResults" style="display: none;">
+                <i class="fas fa-search"></i>
+                <h3>No items found</h3>
+                <p>Try searching with different keywords</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Cart Summary (Sticky) -->
+    <div class="cart-summary" id="cartSummary" style="display: none;">
+        <div class="cart-summary-content">
+            <div class="cart-info">
+                <span class="cart-items-count">0 items</span>
+                <span class="cart-total">₹0</span>
+            </div>
+            <a href="cart.html" class="view-cart-btn">View Cart</a>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>24/7 Restaurant</h3>
+                    <p>Serving delicious food to college students 24/7</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="login.html">Login</a></li>
+                        <li><a href="signup.html">Sign Up</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <p><i class="fas fa-phone"></i> +91 98765 43210</p>
+                    <p><i class="fas fa-envelope"></i> orders@247restaurant.com</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 24/7 College Restaurant. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Add to Cart Modal -->
+    <div class="modal" id="addToCartModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="modal-header">
+                <img id="modalItemImage" src="" alt="">
+                <div>
+                    <h3 id="modalItemName"></h3>
+                    <p id="modalItemDescription"></p>
+                    <div class="modal-price" id="modalItemPrice"></div>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="quantity-selector">
+                    <label>Quantity:</label>
+                    <div class="quantity-controls">
+                        <button type="button" class="qty-btn" id="decreaseQty">-</button>
+                        <input type="number" id="quantity" value="1" min="1" max="10">
+                        <button type="button" class="qty-btn" id="increaseQty">+</button>
+                    </div>
+                </div>
+                <div class="special-instructions">
+                    <label for="instructions">Special Instructions (Optional):</label>
+                    <textarea id="instructions" placeholder="Any special requests..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="add-to-cart-confirm" id="confirmAddToCart">
+                    Add to Cart - ₹<span id="totalPrice">0</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/menu.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

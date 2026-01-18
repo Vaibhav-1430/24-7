@@ -1,0 +1,24 @@
+# Placeholder for food images
+# In a real implementation, this folder would contain:
+# - hero-food.jpg (hero section image)
+# - chicken-biryani.jpg
+# - veg-sandwich.jpg  
+# - masala-chai.jpg
+# - paneer-butter-masala.jpg
+# - samosa.jpg
+# - cold-coffee.jpg
+# - maggi.jpg
+# - dal-rice.jpg
+# - lime-soda.jpg
+# - login-illustration.jpg
+# - signup-illustration.jpg
+# - upi-qr-code.png
+
+# For demo purposes, you can:
+# 1. Add actual food images with these names
+# 2. Use placeholder image services like:
+#    - https://via.placeholder.com/400x300/e74c3c/ffffff?text=Food+Image
+#    - https://picsum.photos/400/300
+# 3. Use free stock photos from Unsplash, Pexels, etc.
+
+# The website will gracefully handle missing images by showing placeholder.jpg

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders - 24x7 Cafe</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/orders.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2>24x7</h2>
+                <span>Cafe</span>
+            </div>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="menu.html" class="nav-link">Menu</a>
+                <a href="orders.html" class="nav-link active">My Orders</a>
+                <a href="cart.html" class="nav-link">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-count">0</span>
+                </a>
+                <a href="login.html" class="nav-link login-btn">Login</a>
+            </div>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Orders Header -->
+    <section class="orders-header">
+        <div class="container">
+            <h1>My Orders</h1>
+            <p>Track your order history and current orders</p>
+        </div>
+    </section>
+
+    <!-- Orders Content -->
+    <section class="orders-section">
+        <div class="container">
+            <!-- Login Required Message -->
+            <div class="login-required" id="loginRequired" style="display: none;">
+                <div class="login-message">
+                    <i class="fas fa-user-lock"></i>
+                    <h3>Login Required</h3>
+                    <p>Please login to view your order history</p>
+                    <a href="login.html?return=orders.html" class="cta-button">Login Now</a>
+                </div>
+            </div>
+
+            <!-- Order Filters -->
+            <div class="order-filters" id="orderFilters" style="display: none;">
+                <button class="filter-btn active" data-status="all">All Orders</button>
+                <button class="filter-btn" data-status="received">Order Received</button>
+                <button class="filter-btn" data-status="preparing">Preparing</button>
+                <button class="filter-btn" data-status="ready">Ready</button>
+                <button class="filter-btn" data-status="delivered">Delivered</button>
+            </div>
+
+            <!-- Orders List -->
+            <div class="orders-list" id="ordersList">
+                <!-- Orders will be loaded dynamically -->
+            </div>
+
+            <!-- No Orders Message -->
+            <div class="no-orders" id="noOrders" style="display: none;">
+                <i class="fas fa-shopping-bag"></i>
+                <h3>No Orders Yet</h3>
+                <p>You haven't placed any orders yet. Start by browsing our delicious menu!</p>
+                <a href="menu.html" class="cta-button">Browse Menu</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Order Details Modal -->
+    <div class="modal" id="orderDetailsModal">
+        <div class="modal-content order-details-modal">
+            <span class="close" onclick="closeOrderDetailsModal()">&times;</span>
+            <div class="modal-header">
+                <h3 id="orderDetailsTitle">Order Details</h3>
+            </div>
+            <div class="modal-body" id="orderDetailsBody">
+                <!-- Order details will be loaded dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>24x7 Cafe</h3>
+                    <p>Serving delicious food to college students 24/7</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="menu.html">Menu</a></li>
+                        <li><a href="login.html">Login</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <p><i class="fas fa-phone"></i> +91 98765 43210</p>
+                    <p><i class="fas fa-envelope"></i> orders@24x7cafe.com</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 24x7 Cafe. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/app.js"></script>
+    <script src="js/orders.js"></script>
+</body>
+</html>

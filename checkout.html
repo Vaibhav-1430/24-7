@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - 24x7 Cafe</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/checkout.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2>24x7</h2>
+                <span>Cafe</span>
+            </div>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="menu.html" class="nav-link">Menu</a>
+                <a href="orders.html" class="nav-link">My Orders</a>
+                <a href="cart.html" class="nav-link">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span class="cart-count">0</span>
+                </a>
+                <a href="login.html" class="nav-link login-btn">Login</a>
+            </div>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Checkout Header -->
+    <section class="checkout-header">
+        <div class="container">
+            <h1>Checkout</h1>
+            <div class="checkout-steps">
+                <div class="step active">
+                    <i class="fas fa-shopping-cart"></i>
+                    <span>Cart</span>
+                </div>
+                <div class="step active">
+                    <i class="fas fa-credit-card"></i>
+                    <span>Payment</span>
+                </div>
+                <div class="step">
+                    <i class="fas fa-check"></i>
+                    <span>Confirm</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Checkout Content -->
+    <section class="checkout-section">
+        <div class="container">
+            <div class="checkout-layout">
+                <!-- Checkout Form -->
+                <div class="checkout-form">
+                    <form id="checkoutForm">
+                        <!-- Delivery Information -->
+                        <div class="form-section">
+                            <h3><i class="fas fa-map-marker-alt"></i> Delivery Information</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="hostelName">Hostel Name</label>
+                                    <select id="hostelName" name="hostelName" required>
+                                        <option value="">Select your hostel</option>
+                                        <option value="Hostel A">Hostel A</option>
+                                        <option value="Hostel B">Hostel B</option>
+                                        <option value="Hostel C">Hostel C</option>
+                                        <option value="Hostel D">Hostel D</option>
+                                        <option value="Girls Hostel 1">Girls Hostel 1</option>
+                                        <option value="Girls Hostel 2">Girls Hostel 2</option>
+                                        <option value="PG Accommodation">PG Accommodation</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="roomNumber">Room Number</label>
+                                    <input type="text" id="roomNumber" name="roomNumber" required 
+                                           placeholder="e.g., 101, A-205">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="deliveryNotes">Delivery Instructions (Optional)</label>
+                                <textarea id="deliveryNotes" name="deliveryNotes" 
+                                          placeholder="Any special delivery instructions..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Contact Information -->
+                        <div class="form-section">
+                            <h3><i class="fas fa-user"></i> Contact Information</h3>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="customerName">Full Name</label>
+                                    <input type="text" id="customerName" name="customerName" required 
+                                           placeholder="Enter your full name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="customerPhone">Phone Number</label>
+                                    <input type="tel" id="customerPhone" name="customerPhone" required 
+                                           placeholder="Enter your phone number">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payment Method -->
+                        <div class="form-section">
+                            <h3><i class="fas fa-credit-card"></i> Payment Method</h3>
+                            <div class="payment-methods">
+                                <label class="payment-option">
+                                    <input type="radio" name="paymentMethod" value="cod" checked>
+                                    <div class="payment-card">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                        <div>
+                                            <h4>Cash on Delivery</h4>
+                                            <p>Pay when your order arrives</p>
+                                        </div>
+                                    </div>
+                                </label>
+                                <label class="payment-option">
+                                    <input type="radio" name="paymentMethod" value="upi">
+                                    <div class="payment-card">
+                                        <i class="fas fa-mobile-alt"></i>
+                                        <div>
+                                            <h4>UPI Payment</h4>
+                                            <p>Pay instantly via UPI</p>
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- UPI Payment Details (Hidden by default) -->
+                        <div class="form-section" id="upiSection" style="display: none;">
+                            <h4>UPI Payment Details</h4>
+                            <div class="upi-info">
+                                <div class="upi-qr">
+                                    <img src="images/upi-qr-code.png" alt="UPI QR Code">
+                                    <p>Scan QR code to pay</p>
+                                </div>
+                                <div class="upi-details">
+                                    <p><strong>UPI ID:</strong> 247restaurant@paytm</p>
+                                    <p><strong>Amount:</strong> ₹<span id="upiAmount">0</span></p>
+                                    <div class="form-group">
+                                        <label for="transactionId">Transaction ID</label>
+                                        <input type="text" id="transactionId" name="transactionId" 
+                                               placeholder="Enter UPI transaction ID">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Order Summary -->
+                <div class="order-summary-checkout">
+                    <div class="summary-card">
+                        <h3>Order Summary</h3>
+                        
+                        <!-- Order Items -->
+                        <div class="order-items" id="orderItems">
+                            <!-- Items will be loaded dynamically -->
+                        </div>
+                        
+                        <div class="summary-divider"></div>
+                        
+                        <!-- Price Breakdown -->
+                        <div class="price-breakdown">
+                            <div class="summary-row">
+                                <span>Subtotal</span>
+                                <span id="checkoutSubtotal">₹0</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>Delivery Fee</span>
+                                <span id="checkoutDeliveryFee">₹10</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>Tax (5%)</span>
+                                <span id="checkoutTax">₹0</span>
+                            </div>
+                            <div class="summary-divider"></div>
+                            <div class="summary-row total">
+                                <span>Total Amount</span>
+                                <span id="checkoutTotal">₹0</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Place Order Button -->
+                        <button type="button" class="place-order-btn" id="placeOrderBtn">
+                            <i class="fas fa-check"></i>
+                            Place Order
+                        </button>
+                        
+                        <!-- Back to Cart -->
+                        <div class="back-to-cart">
+                            <a href="cart.html">
+                                <i class="fas fa-arrow-left"></i>
+                                Back to Cart
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Order Success Modal -->
+    <div class="modal" id="orderSuccessModal">
+        <div class="modal-content success-modal">
+            <div class="success-header">
+                <i class="fas fa-check-circle"></i>
+                <h2>Order Placed Successfully!</h2>
+                <p>Your order has been received and is being prepared</p>
+            </div>
+            <div class="order-details">
+                <div class="order-info">
+                    <h4>Order Details</h4>
+                    <p><strong>Order ID:</strong> <span id="orderIdDisplay"></span></p>
+                    <p><strong>Estimated Delivery:</strong> <span id="estimatedDelivery"></span></p>
+                    <p><strong>Total Amount:</strong> <span id="orderTotalDisplay"></span></p>
+                </div>
+            </div>
+            <div class="success-actions">
+                <button class="track-order-btn" onclick="trackOrder()">
+                    <i class="fas fa-map-marker-alt"></i>
+                    Track Order
+                </button>
+                <button class="continue-shopping-btn" onclick="continueShopping()">
+                    Continue Shopping
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+    <script src="js/checkout.js"></script>
+</body>
+</html>
