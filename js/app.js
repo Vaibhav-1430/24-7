@@ -8,33 +8,52 @@ const APP_CONFIG = {
 class FirebaseCartManager {
     constructor() {
         this.cart = [];
+        this.cartListener = null;
         this.initCartListener();
     }
 
     initCartListener() {
         // Wait for Firebase to be loaded
-        if (typeof firebase === 'undefined') {
-            setTimeout(() => this.initCartListener(), 100);
-            return;
-        }
+        const waitForFirebase = () => {
+            if (typeof firebase === 'undefined' || !window.firebaseAuth) {
+                setTimeout(waitForFirebase, 500);
+                return;
+            }
+            
+            console.log('🛒 Setting up cart listener');
+            this.setupCartListener();
+        };
+        
+        waitForFirebase();
+    }
 
+    setupCartListener() {
         // Listen for auth state changes to load user's cart
-        firebaseAuth.onAuthStateChanged(async (user) => {
+        window.firebaseAuth.onAuthStateChanged(async (user) => {
             if (user) {
+                console.log('🛒 Loading cart for user:', user.email);
                 // Load user's cart from Firestore
                 await this.loadUserCart(user.uid);
                 
                 // Listen for real-time cart updates
-                this.cartListener = firebaseDB.collection('carts').doc(user.uid)
+                if (this.cartListener) {
+                    this.cartListener(); // Unsubscribe previous listener
+                }
+                
+                this.cartListener = window.firebaseDB.collection('carts').doc(user.uid)
                     .onSnapshot((doc) => {
                         if (doc.exists) {
                             const cartData = doc.data();
                             this.cart = cartData.items || [];
+                            console.log('🛒 Cart updated from Firebase:', this.cart.length, 'items');
                             this.updateCartUI();
                         }
+                    }, (error) => {
+                        console.error('❌ Cart listener error:', error);
                     });
             } else {
                 // User logged out, clear cart
+                console.log('🛒 User logged out, clearing cart');
                 this.cart = [];
                 this.updateCartUI();
                 
@@ -49,27 +68,29 @@ class FirebaseCartManager {
 
     async loadUserCart(userId) {
         try {
-            const cartDoc = await firebaseDB.collection('carts').doc(userId).get();
+            const cartDoc = await window.firebaseDB.collection('carts').doc(userId).get();
             if (cartDoc.exists) {
                 this.cart = cartDoc.data().items || [];
+                console.log('✅ Cart loaded:', this.cart.length, 'items');
             } else {
                 this.cart = [];
+                console.log('📝 No existing cart found, starting fresh');
             }
             this.updateCartUI();
         } catch (error) {
-            console.error('Error loading cart:', error);
+            console.error('❌ Error loading cart:', error);
             this.cart = [];
         }
     }
 
     async saveCart() {
-        if (!firebaseAuth.currentUser) {
-            console.log('No user logged in, cannot save cart');
+        if (!window.firebaseAuth || !window.firebaseAuth.currentUser) {
+            console.log('⚠️ No user logged in, cannot save cart');
             return;
         }
 
         try {
-            await firebaseDB.collection('carts').doc(firebaseAuth.currentUser.uid).set({
+            await window.firebaseDB.collection('carts').doc(window.firebaseAuth.currentUser.uid).set({
                 items: this.cart,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
@@ -1056,26 +1077,38 @@ class FirebaseAuthManager {
 
     initAuthListener() {
         // Wait for Firebase to be loaded
-        if (typeof firebase === 'undefined') {
-            setTimeout(() => this.initAuthListener(), 100);
-            return;
-        }
+        const waitForFirebase = () => {
+            if (typeof firebase === 'undefined' || !window.firebaseAuth) {
+                console.log('⏳ Waiting for Firebase to load...');
+                setTimeout(waitForFirebase, 500);
+                return;
+            }
+            
+            console.log('✅ Firebase loaded, setting up auth listener');
+            this.setupAuthListener();
+        };
+        
+        waitForFirebase();
+    }
 
+    setupAuthListener() {
         // Listen for authentication state changes
-        firebaseAuth.onAuthStateChanged(async (user) => {
+        window.firebaseAuth.onAuthStateChanged(async (user) => {
+            console.log('🔄 Auth state changed:', user ? user.email : 'No user');
+            
             if (user) {
                 // User is signed in
                 try {
-                    const userDoc = await firebaseDB.collection('users').doc(user.uid).get();
+                    const userDoc = await window.firebaseDB.collection('users').doc(user.uid).get();
                     this.currentUser = {
                         id: user.uid,
                         email: user.email,
                         emailVerified: user.emailVerified,
                         ...userDoc.data()
                     };
-                    console.log('✅ User logged in:', this.currentUser.email);
+                    console.log('✅ User data loaded:', this.currentUser.email);
                 } catch (error) {
-                    console.error('Error fetching user data:', error);
+                    console.error('⚠️ Error fetching user data:', error);
                     this.currentUser = {
                         id: user.uid,
                         email: user.email,
@@ -1093,14 +1126,22 @@ class FirebaseAuthManager {
 
     async signup(userData) {
         try {
+            if (!window.firebaseAuth) {
+                throw new Error('Firebase not initialized');
+            }
+
             const { email, password, firstName, lastName, phone, hostel, roomNumber } = userData;
             
+            console.log('📝 Creating user account for:', email);
+            
             // Create user account
-            const userCredential = await firebaseAuth.createUserWithEmailAndPassword(email, password);
+            const userCredential = await window.firebaseAuth.createUserWithEmailAndPassword(email, password);
             const user = userCredential.user;
 
+            console.log('✅ User account created, saving profile data...');
+
             // Save additional user data to Firestore
-            await firebaseDB.collection('users').doc(user.uid).set({
+            await window.firebaseDB.collection('users').doc(user.uid).set({
                 firstName: firstName,
                 lastName: lastName,
                 name: `${firstName} ${lastName}`,
@@ -1112,7 +1153,7 @@ class FirebaseAuthManager {
                 isActive: true
             });
 
-            console.log('✅ User account created successfully');
+            console.log('✅ User profile saved successfully');
             return user;
         } catch (error) {
             console.error('❌ Signup error:', error);
@@ -1122,7 +1163,12 @@ class FirebaseAuthManager {
 
     async login(email, password) {
         try {
-            const userCredential = await firebaseAuth.signInWithEmailAndPassword(email, password);
+            if (!window.firebaseAuth) {
+                throw new Error('Firebase not initialized');
+            }
+
+            console.log('🔐 Logging in user:', email);
+            const userCredential = await window.firebaseAuth.signInWithEmailAndPassword(email, password);
             console.log('✅ User logged in successfully');
             return userCredential.user;
         } catch (error) {
@@ -1133,7 +1179,11 @@ class FirebaseAuthManager {
 
     async logout() {
         try {
-            await firebaseAuth.signOut();
+            if (!window.firebaseAuth) {
+                throw new Error('Firebase not initialized');
+            }
+
+            await window.firebaseAuth.signOut();
             console.log('✅ User logged out successfully');
         } catch (error) {
             console.error('❌ Logout error:', error);
@@ -1174,11 +1224,14 @@ class FirebaseAuthManager {
             const demoEmail = 'demo@24x7cafe.com';
             const demoPassword = 'demo123456';
             
+            console.log('🧪 Attempting demo login...');
+            
             try {
                 // Try to login first
                 await this.login(demoEmail, demoPassword);
             } catch (error) {
                 if (error.code === 'auth/user-not-found') {
+                    console.log('👤 Demo user not found, creating...');
                     // Create demo account if it doesn't exist
                     await this.signup({
                         email: demoEmail,
