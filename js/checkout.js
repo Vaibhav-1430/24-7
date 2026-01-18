@@ -233,20 +233,25 @@ function generateOrderId() {
     return `247${timestamp.toString().slice(-6)}${random}`;
 }
 
-function saveOrder(order) {
-    // Get existing orders
-    const existingOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-    
-    // Add new order
-    existingOrders.unshift(order);
-    
-    // Keep only last 50 orders
-    if (existingOrders.length > 50) {
-        existingOrders.splice(50);
+// Save order to Firestore
+async function saveOrder(order) {
+    try {
+        // Add order to Firestore
+        const docRef = await firebaseDB.collection('orders').add({
+            ...order,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        console.log('✅ Order saved with ID:', docRef.id);
+        
+        // Update the order with the Firestore document ID
+        order.firestoreId = docRef.id;
+        
+        return docRef.id;
+    } catch (error) {
+        console.error('❌ Error saving order:', error);
+        throw error;
     }
-    
-    // Save back to localStorage
-    localStorage.setItem('orders', JSON.stringify(existingOrders));
 }
 
 function showOrderSuccess(order) {

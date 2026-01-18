@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 24x7 Cafe - Food Ordering Website
 
 A modern, responsive food ordering website designed specifically for college students to order food from their hostels 24/7.
@@ -274,3 +275,6 @@ For questions or issues:
 ---
 
 **Built with ❤️ for college students who love good food!**
+=======
+# 24-7
+>>>>>>> e960e1f57d70ed611570b217d0ccc34d5303fef6

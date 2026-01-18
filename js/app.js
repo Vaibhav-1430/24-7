@@ -4,27 +4,86 @@ const APP_CONFIG = {
     currency: '₹'
 };
 
-// Cart Management
-class CartManager {
+// Firebase Cart Management
+class FirebaseCartManager {
     constructor() {
-        this.cart = this.loadCart();
-        this.updateCartUI();
+        this.cart = [];
+        this.initCartListener();
     }
 
-    loadCart() {
-        const savedCart = localStorage.getItem('cart');
-        return savedCart ? JSON.parse(savedCart) : [];
+    initCartListener() {
+        // Wait for Firebase to be loaded
+        if (typeof firebase === 'undefined') {
+            setTimeout(() => this.initCartListener(), 100);
+            return;
+        }
+
+        // Listen for auth state changes to load user's cart
+        firebaseAuth.onAuthStateChanged(async (user) => {
+            if (user) {
+                // Load user's cart from Firestore
+                await this.loadUserCart(user.uid);
+                
+                // Listen for real-time cart updates
+                this.cartListener = firebaseDB.collection('carts').doc(user.uid)
+                    .onSnapshot((doc) => {
+                        if (doc.exists) {
+                            const cartData = doc.data();
+                            this.cart = cartData.items || [];
+                            this.updateCartUI();
+                        }
+                    });
+            } else {
+                // User logged out, clear cart
+                this.cart = [];
+                this.updateCartUI();
+                
+                // Unsubscribe from cart listener
+                if (this.cartListener) {
+                    this.cartListener();
+                    this.cartListener = null;
+                }
+            }
+        });
     }
 
-    saveCart() {
-        localStorage.setItem('cart', JSON.stringify(this.cart));
-        this.updateCartUI();
+    async loadUserCart(userId) {
+        try {
+            const cartDoc = await firebaseDB.collection('carts').doc(userId).get();
+            if (cartDoc.exists) {
+                this.cart = cartDoc.data().items || [];
+            } else {
+                this.cart = [];
+            }
+            this.updateCartUI();
+        } catch (error) {
+            console.error('Error loading cart:', error);
+            this.cart = [];
+        }
     }
 
-    addItem(item) {
+    async saveCart() {
+        if (!firebaseAuth.currentUser) {
+            console.log('No user logged in, cannot save cart');
+            return;
+        }
+
+        try {
+            await firebaseDB.collection('carts').doc(firebaseAuth.currentUser.uid).set({
+                items: this.cart,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            console.log('✅ Cart saved to Firebase');
+        } catch (error) {
+            console.error('❌ Error saving cart:', error);
+        }
+    }
+
+    async addItem(item) {
         const existingItem = this.cart.find(cartItem => 
             cartItem.id === item.id && 
-            cartItem.instructions === item.instructions
+            cartItem.instructions === item.instructions &&
+            cartItem.name === item.name // Include name to handle full/half variations
         );
 
         if (existingItem) {
@@ -36,28 +95,32 @@ class CartManager {
             });
         }
 
-        this.saveCart();
+        await this.saveCart();
         this.showAddToCartNotification(item);
     }
 
-    removeItem(itemId, instructions = '') {
+    async removeItem(itemId, instructions = '', itemName = '') {
         this.cart = this.cart.filter(item => 
-            !(item.id === itemId && item.instructions === instructions)
+            !(item.id === itemId && 
+              item.instructions === instructions &&
+              (itemName === '' || item.name === itemName))
         );
-        this.saveCart();
+        await this.saveCart();
     }
 
-    updateQuantity(itemId, instructions, newQuantity) {
+    async updateQuantity(itemId, instructions, newQuantity, itemName = '') {
         const item = this.cart.find(cartItem => 
-            cartItem.id === itemId && cartItem.instructions === instructions
+            cartItem.id === itemId && 
+            cartItem.instructions === instructions &&
+            (itemName === '' || cartItem.name === itemName)
         );
         
         if (item) {
             if (newQuantity <= 0) {
-                this.removeItem(itemId, instructions);
+                await this.removeItem(itemId, instructions, itemName);
             } else {
                 item.quantity = newQuantity;
-                this.saveCart();
+                await this.saveCart();
             }
         }
     }
@@ -70,9 +133,9 @@ class CartManager {
         return this.cart.reduce((count, item) => count + item.quantity, 0);
     }
 
-    clearCart() {
+    async clearCart() {
         this.cart = [];
-        this.saveCart();
+        await this.saveCart();
     }
 
     updateCartUI() {
@@ -153,8 +216,8 @@ class CartManager {
     }
 }
 
-// Initialize cart manager
-const cartManager = new CartManager();
+// Initialize Firebase cart manager
+const cartManager = new FirebaseCartManager();
 
 // Navigation Menu Toggle
 document.addEventListener('DOMContentLoaded', function() {
@@ -984,30 +1047,102 @@ function closeQuickAddModal() {
     }
 }
 
-// User Authentication State
-class AuthManager {
+// Firebase Authentication Manager
+class FirebaseAuthManager {
     constructor() {
-        this.currentUser = this.loadUser();
-        this.updateAuthUI();
-    }
-
-    loadUser() {
-        const savedUser = localStorage.getItem('currentUser');
-        return savedUser ? JSON.parse(savedUser) : null;
-    }
-
-    saveUser(user) {
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        this.currentUser = user;
-        this.updateAuthUI();
-    }
-
-    logout() {
-        localStorage.removeItem('currentUser');
         this.currentUser = null;
-        this.updateAuthUI();
-        // Redirect to home page
-        window.location.href = 'index.html';
+        this.initAuthListener();
+    }
+
+    initAuthListener() {
+        // Wait for Firebase to be loaded
+        if (typeof firebase === 'undefined') {
+            setTimeout(() => this.initAuthListener(), 100);
+            return;
+        }
+
+        // Listen for authentication state changes
+        firebaseAuth.onAuthStateChanged(async (user) => {
+            if (user) {
+                // User is signed in
+                try {
+                    const userDoc = await firebaseDB.collection('users').doc(user.uid).get();
+                    this.currentUser = {
+                        id: user.uid,
+                        email: user.email,
+                        emailVerified: user.emailVerified,
+                        ...userDoc.data()
+                    };
+                    console.log('✅ User logged in:', this.currentUser.email);
+                } catch (error) {
+                    console.error('Error fetching user data:', error);
+                    this.currentUser = {
+                        id: user.uid,
+                        email: user.email,
+                        emailVerified: user.emailVerified
+                    };
+                }
+            } else {
+                // User is signed out
+                this.currentUser = null;
+                console.log('👋 User logged out');
+            }
+            this.updateAuthUI();
+        });
+    }
+
+    async signup(userData) {
+        try {
+            const { email, password, firstName, lastName, phone, hostel, roomNumber } = userData;
+            
+            // Create user account
+            const userCredential = await firebaseAuth.createUserWithEmailAndPassword(email, password);
+            const user = userCredential.user;
+
+            // Save additional user data to Firestore
+            await firebaseDB.collection('users').doc(user.uid).set({
+                firstName: firstName,
+                lastName: lastName,
+                name: `${firstName} ${lastName}`,
+                email: email,
+                phone: phone,
+                hostel: hostel,
+                roomNumber: roomNumber,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                isActive: true
+            });
+
+            console.log('✅ User account created successfully');
+            return user;
+        } catch (error) {
+            console.error('❌ Signup error:', error);
+            throw error;
+        }
+    }
+
+    async login(email, password) {
+        try {
+            const userCredential = await firebaseAuth.signInWithEmailAndPassword(email, password);
+            console.log('✅ User logged in successfully');
+            return userCredential.user;
+        } catch (error) {
+            console.error('❌ Login error:', error);
+            throw error;
+        }
+    }
+
+    async logout() {
+        try {
+            await firebaseAuth.signOut();
+            console.log('✅ User logged out successfully');
+        } catch (error) {
+            console.error('❌ Logout error:', error);
+            throw error;
+        }
+    }
+
+    isLoggedIn() {
+        return this.currentUser !== null;
     }
 
     updateAuthUI() {
@@ -1022,15 +1157,51 @@ class AuthManager {
                 btn.href = 'login.html';
             }
         });
+
+        // Update user-specific UI elements
+        const userNameElements = document.querySelectorAll('.user-name');
+        userNameElements.forEach(el => {
+            if (this.currentUser) {
+                el.textContent = this.currentUser.name || this.currentUser.email;
+            }
+        });
     }
 
-    isLoggedIn() {
-        return this.currentUser !== null;
+    // Demo login for testing
+    async demoLogin() {
+        try {
+            // Create or login with demo account
+            const demoEmail = 'demo@24x7cafe.com';
+            const demoPassword = 'demo123456';
+            
+            try {
+                // Try to login first
+                await this.login(demoEmail, demoPassword);
+            } catch (error) {
+                if (error.code === 'auth/user-not-found') {
+                    // Create demo account if it doesn't exist
+                    await this.signup({
+                        email: demoEmail,
+                        password: demoPassword,
+                        firstName: 'Demo',
+                        lastName: 'Student',
+                        phone: '+91 98765 43210',
+                        hostel: 'Hostel A',
+                        roomNumber: '101'
+                    });
+                } else {
+                    throw error;
+                }
+            }
+        } catch (error) {
+            console.error('❌ Demo login error:', error);
+            throw error;
+        }
     }
 }
 
-// Initialize auth manager
-const authManager = new AuthManager();
+// Initialize Firebase auth manager
+const authManager = new FirebaseAuthManager();
 
 // Initialize page-specific functionality
 document.addEventListener('DOMContentLoaded', function() {

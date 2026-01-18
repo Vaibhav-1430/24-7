@@ -32,7 +32,6 @@ async function handleLogin(e) {
     const formData = new FormData(e.target);
     const email = formData.get('email').trim();
     const password = formData.get('password');
-    const rememberMe = document.getElementById('rememberMe').checked;
     
     // Validate inputs
     if (!email || !password) {
@@ -46,22 +45,8 @@ async function handleLogin(e) {
     btnSpinner.style.display = 'block';
     
     try {
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
-        // In a real app, this would make an API call to authenticate
-        // For demo purposes, we'll accept any email/password combination
-        const user = {
-            id: generateUserId(),
-            email: email,
-            name: extractNameFromEmail(email),
-            phone: isPhoneNumber(email) ? email : null,
-            loginTime: new Date().toISOString(),
-            rememberMe: rememberMe
-        };
-        
-        // Save user session
-        authManager.saveUser(user);
+        // Use Firebase authentication
+        await authManager.login(email, password);
         
         showMessage('Login successful! Redirecting...', 'success');
         
@@ -72,7 +57,25 @@ async function handleLogin(e) {
         }, 1000);
         
     } catch (error) {
-        showMessage('Login failed. Please try again.', 'error');
+        let errorMessage = 'Login failed. Please try again.';
+        
+        // Handle specific Firebase errors
+        switch (error.code) {
+            case 'auth/user-not-found':
+                errorMessage = 'No account found with this email address.';
+                break;
+            case 'auth/wrong-password':
+                errorMessage = 'Incorrect password. Please try again.';
+                break;
+            case 'auth/invalid-email':
+                errorMessage = 'Please enter a valid email address.';
+                break;
+            case 'auth/too-many-requests':
+                errorMessage = 'Too many failed attempts. Please try again later.';
+                break;
+        }
+        
+        showMessage(errorMessage, 'error');
     } finally {
         // Reset button state
         submitBtn.disabled = false;
@@ -116,25 +119,16 @@ async function handleSignup(e) {
     btnSpinner.style.display = 'block';
     
     try {
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // In a real app, this would make an API call to create account
-        const user = {
-            id: generateUserId(),
-            firstName: firstName,
-            lastName: lastName,
-            name: `${firstName} ${lastName}`,
-            email: email,
-            phone: phone,
-            hostel: hostel,
-            roomNumber: roomNumber,
-            signupTime: new Date().toISOString(),
-            rememberMe: true
-        };
-        
-        // Save user session
-        authManager.saveUser(user);
+        // Use Firebase authentication
+        await authManager.signup({
+            firstName,
+            lastName,
+            email,
+            phone,
+            hostel,
+            roomNumber,
+            password
+        });
         
         showMessage('Account created successfully! Redirecting...', 'success');
         
@@ -144,7 +138,25 @@ async function handleSignup(e) {
         }, 1500);
         
     } catch (error) {
-        showMessage('Signup failed. Please try again.', 'error');
+        let errorMessage = 'Signup failed. Please try again.';
+        
+        // Handle specific Firebase errors
+        switch (error.code) {
+            case 'auth/email-already-in-use':
+                errorMessage = 'An account with this email already exists.';
+                break;
+            case 'auth/invalid-email':
+                errorMessage = 'Please enter a valid email address.';
+                break;
+            case 'auth/weak-password':
+                errorMessage = 'Password should be at least 6 characters long.';
+                break;
+            case 'auth/operation-not-allowed':
+                errorMessage = 'Email/password accounts are not enabled.';
+                break;
+        }
+        
+        showMessage(errorMessage, 'error');
     } finally {
         // Reset button state
         submitBtn.disabled = false;
@@ -154,25 +166,17 @@ async function handleSignup(e) {
 }
 
 // Demo login function
-function demoLogin() {
-    const demoUser = {
-        id: 'demo-student-001',
-        name: 'Demo Student',
-        email: 'demo@student.college.edu',
-        phone: '+91 98765 43210',
-        hostel: 'Hostel A',
-        roomNumber: '101',
-        loginTime: new Date().toISOString(),
-        rememberMe: true,
-        isDemo: true
-    };
-    
-    authManager.saveUser(demoUser);
-    showMessage('Demo login successful! Redirecting...', 'success');
-    
-    setTimeout(() => {
-        window.location.href = 'index.html';
-    }, 1000);
+async function demoLogin() {
+    try {
+        await authManager.demoLogin();
+        showMessage('Demo login successful! Redirecting...', 'success');
+        
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 1000);
+    } catch (error) {
+        showMessage('Demo login failed. Please try again.', 'error');
+    }
 }
 
 // Validation functions

@@ -40,36 +40,69 @@ function setupEventListeners() {
 }
 
 function loadUserOrders() {
-    const allOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-    const currentUser = authManager.currentUser;
-    
-    // Filter orders for current user
-    const userOrders = allOrders.filter(order => order.userId === currentUser.id);
-    
-    if (userOrders.length === 0) {
-        showNoOrders();
+    if (!firebaseAuth.currentUser) {
+        showLoginRequired();
         return;
     }
-    
-    displayOrders(userOrders);
+
+    // Query user's orders from Firestore
+    firebaseDB.collection('orders')
+        .where('userId', '==', firebaseAuth.currentUser.uid)
+        .orderBy('createdAt', 'desc')
+        .onSnapshot((querySnapshot) => {
+            const userOrders = [];
+            querySnapshot.forEach((doc) => {
+                userOrders.push({
+                    firestoreId: doc.id,
+                    ...doc.data()
+                });
+            });
+            
+            if (userOrders.length === 0) {
+                showNoOrders();
+                return;
+            }
+            
+            displayOrders(userOrders);
+        }, (error) => {
+            console.error('Error loading orders:', error);
+            showNoOrders();
+        });
 }
 
 function filterUserOrders(status) {
-    const allOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-    const currentUser = authManager.currentUser;
-    
-    let userOrders = allOrders.filter(order => order.userId === currentUser.id);
-    
-    if (status !== 'all') {
-        userOrders = userOrders.filter(order => order.status === status);
-    }
-    
-    if (userOrders.length === 0) {
-        showNoOrdersForFilter();
+    if (!firebaseAuth.currentUser) {
+        showLoginRequired();
         return;
     }
+
+    let query = firebaseDB.collection('orders')
+        .where('userId', '==', firebaseAuth.currentUser.uid)
+        .orderBy('createdAt', 'desc');
     
-    displayOrders(userOrders);
+    if (status !== 'all') {
+        query = query.where('status', '==', status);
+    }
+    
+    query.get().then((querySnapshot) => {
+        const userOrders = [];
+        querySnapshot.forEach((doc) => {
+            userOrders.push({
+                firestoreId: doc.id,
+                ...doc.data()
+            });
+        });
+        
+        if (userOrders.length === 0) {
+            showNoOrdersForFilter();
+            return;
+        }
+        
+        displayOrders(userOrders);
+    }).catch((error) => {
+        console.error('Error filtering orders:', error);
+        showNoOrdersForFilter();
+    });
 }
 
 function displayOrders(orders) {
@@ -200,16 +233,33 @@ function formatDateTime(dateString) {
 
 // Global functions
 window.showOrderDetails = function(orderId) {
-    const allOrders = JSON.parse(localStorage.getItem('orders') || '[]');
-    const order = allOrders.find(o => o.id === orderId);
-    
-    if (!order) return;
-    
+    // Find order by firestoreId or regular id
+    firebaseDB.collection('orders').doc(orderId).get()
+        .then((doc) => {
+            if (!doc.exists) {
+                console.error('Order not found');
+                return;
+            }
+            
+            const order = { firestoreId: doc.id, ...doc.data() };
+            showOrderDetailsModal(order);
+        })
+        .catch((error) => {
+            console.error('Error fetching order details:', error);
+        });
+};
+
+function showOrderDetailsModal(order) {
     const modal = document.getElementById('orderDetailsModal');
     const title = document.getElementById('orderDetailsTitle');
     const body = document.getElementById('orderDetailsBody');
     
     title.textContent = `Order #${order.id}`;
+    
+    // Convert Firestore timestamp to JavaScript Date
+    const orderTime = order.createdAt ? order.createdAt.toDate() : new Date(order.orderTime);
+    const estimatedDelivery = order.estimatedDelivery ? 
+        (order.estimatedDelivery.toDate ? order.estimatedDelivery.toDate() : new Date(order.estimatedDelivery)) : null;
     
     body.innerHTML = `
         <div class="order-details-content">
@@ -221,16 +271,16 @@ window.showOrderDetails = function(orderId) {
                 </div>
                 <div class="detail-row">
                     <span>Order Date:</span>
-                    <strong>${formatDateTime(order.orderTime)}</strong>
+                    <strong>${formatDateTime(orderTime.toISOString())}</strong>
                 </div>
                 <div class="detail-row">
                     <span>Status:</span>
                     <span class="order-status status-${order.status}">${getStatusText(order.status)}</span>
                 </div>
-                ${order.estimatedDelivery ? `
+                ${estimatedDelivery ? `
                     <div class="detail-row">
                         <span>Estimated Delivery:</span>
-                        <strong>${new Date(order.estimatedDelivery).toLocaleTimeString('en-US', {
+                        <strong>${estimatedDelivery.toLocaleTimeString('en-US', {
                             hour: '2-digit',
                             minute: '2-digit',
                             hour12: true
@@ -310,7 +360,7 @@ window.showOrderDetails = function(orderId) {
     `;
     
     modal.style.display = 'block';
-};
+}
 
 window.closeOrderDetailsModal = function() {
     document.getElementById('orderDetailsModal').style.display = 'none';
