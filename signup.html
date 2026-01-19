@@ -165,5 +165,124 @@
     <script src="js/firebase-config.js"></script>
     <script src="js/app.js"></script>
     <script src="js/auth.js"></script>
+    
+    <!-- Debug script to help troubleshoot -->
+    <script>
+        // Add some debugging to help identify issues
+        window.addEventListener('load', function() {
+            console.log('🔍 Signup page loaded');
+            console.log('🔍 Firebase available:', typeof firebase !== 'undefined');
+            console.log('🔍 AuthManager available:', typeof window.authManager !== 'undefined');
+            
+            // Check if form exists
+            const form = document.getElementById('signupForm');
+            console.log('🔍 Signup form found:', !!form);
+            
+            if (form) {
+                // Add a test click handler to see if events are working
+                const submitBtn = form.querySelector('.auth-btn');
+                if (submitBtn) {
+                    console.log('🔍 Submit button found');
+                    
+                    // Add click event to debug
+                    submitBtn.addEventListener('click', function(e) {
+                        console.log('🔍 Submit button clicked');
+                    });
+                }
+            }
+        });
+        
+        // Listen for Firebase ready event
+        window.addEventListener('firebaseUserChanged', function(e) {
+            console.log('🔍 Firebase user changed:', e.detail);
+        });
+        
+        // Fallback signup handler in case auth.js fails
+        setTimeout(function() {
+            const form = document.getElementById('signupForm');
+            if (form && !form.hasAttribute('data-handler-attached')) {
+                console.log('🔧 Attaching fallback signup handler');
+                form.setAttribute('data-handler-attached', 'true');
+                
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    console.log('🚀 Fallback signup handler triggered');
+                    
+                    const submitBtn = form.querySelector('.auth-btn');
+                    const btnSpinner = submitBtn.querySelector('.btn-spinner');
+                    
+                    // Show loading state
+                    submitBtn.disabled = true;
+                    submitBtn.classList.add('loading');
+                    if (btnSpinner) btnSpinner.style.display = 'block';
+                    
+                    try {
+                        // Wait for Firebase to be ready
+                        await window.waitForFirebase();
+                        
+                        // Get form data
+                        const formData = new FormData(form);
+                        const userData = {
+                            firstName: formData.get('firstName').trim(),
+                            lastName: formData.get('lastName').trim(),
+                            email: formData.get('email').trim(),
+                            phone: formData.get('phone').trim(),
+                            hostel: formData.get('hostel').trim(),
+                            roomNumber: formData.get('roomNumber').trim(),
+                            password: formData.get('password')
+                        };
+                        
+                        console.log('📝 Creating account for:', userData.email);
+                        
+                        // Create Firebase Auth user
+                        const userCredential = await window.firebaseAuth.createUserWithEmailAndPassword(userData.email, userData.password);
+                        const user = userCredential.user;
+                        
+                        console.log('✅ Auth user created:', user.email);
+                        
+                        // Save user data to Firestore
+                        await window.firebaseDB.collection('users').doc(user.uid).set({
+                            firstName: userData.firstName,
+                            lastName: userData.lastName,
+                            name: `${userData.firstName} ${userData.lastName}`,
+                            email: userData.email,
+                            phone: userData.phone,
+                            hostel: userData.hostel,
+                            roomNumber: userData.roomNumber,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                            isActive: true
+                        });
+                        
+                        console.log('✅ User data saved successfully');
+                        
+                        // Show success message
+                        alert('Account created successfully! Redirecting to home page...');
+                        
+                        // Redirect to home page
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 1000);
+                        
+                    } catch (error) {
+                        console.error('❌ Signup error:', error);
+                        
+                        let errorMessage = 'Signup failed: ' + error.message;
+                        if (error.code === 'auth/email-already-in-use') {
+                            errorMessage = 'An account with this email already exists.';
+                        } else if (error.code === 'auth/weak-password') {
+                            errorMessage = 'Password should be at least 6 characters long.';
+                        }
+                        
+                        alert(errorMessage);
+                    } finally {
+                        // Reset button state
+                        submitBtn.disabled = false;
+                        submitBtn.classList.remove('loading');
+                        if (btnSpinner) btnSpinner.style.display = 'none';
+                    }
+                });
+            }
+        }, 2000); // Wait 2 seconds for other scripts to load
+    </script>
 </body>
 </html>

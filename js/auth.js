@@ -1,5 +1,16 @@
 // Authentication functionality
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+    // Wait for Firebase to be ready before setting up event listeners
+    try {
+        console.log('🔄 Waiting for Firebase to initialize...');
+        await window.waitForFirebase();
+        console.log('✅ Firebase ready, setting up auth handlers');
+    } catch (error) {
+        console.error('❌ Firebase initialization failed:', error);
+        showMessage('System initialization failed. Please refresh the page.', 'error');
+        return;
+    }
+
     const loginForm = document.getElementById('loginForm');
     const signupForm = document.getElementById('signupForm');
 
@@ -14,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Check if user is already logged in
-    if (authManager.isLoggedIn()) {
+    if (authManager && authManager.isLoggedIn()) {
         // Redirect to home page if already logged in
         window.location.href = 'index.html';
     }
@@ -88,6 +99,8 @@ async function handleLogin(e) {
 async function handleSignup(e) {
     e.preventDefault();
     
+    console.log('🚀 Signup form submitted');
+    
     const submitBtn = e.target.querySelector('.auth-btn');
     const btnText = submitBtn.querySelector('.btn-text');
     const btnSpinner = submitBtn.querySelector('.btn-spinner');
@@ -103,13 +116,25 @@ async function handleSignup(e) {
     const password = formData.get('password');
     const confirmPassword = formData.get('confirmPassword');
     
+    console.log('📝 Form data collected:', { firstName, lastName, email, phone, hostel, roomNumber });
+    
     // Validate inputs
     const validation = validateSignupForm({
         firstName, lastName, email, phone, hostel, roomNumber, password, confirmPassword
     });
     
     if (!validation.isValid) {
+        console.log('❌ Validation failed:', validation.message);
         showMessage(validation.message, 'error');
+        return;
+    }
+    
+    console.log('✅ Form validation passed');
+    
+    // Check if authManager is available
+    if (!window.authManager) {
+        console.error('❌ AuthManager not available');
+        showMessage('System not ready. Please refresh the page and try again.', 'error');
         return;
     }
     
@@ -119,6 +144,8 @@ async function handleSignup(e) {
     btnSpinner.style.display = 'block';
     
     try {
+        console.log('🔐 Starting Firebase signup...');
+        
         // Use Firebase authentication
         await authManager.signup({
             firstName,
@@ -130,6 +157,7 @@ async function handleSignup(e) {
             password
         });
         
+        console.log('✅ Signup successful');
         showMessage('Account created successfully! Redirecting...', 'success');
         
         // Redirect after short delay
@@ -138,6 +166,8 @@ async function handleSignup(e) {
         }, 1500);
         
     } catch (error) {
+        console.error('❌ Signup error:', error);
+        
         let errorMessage = 'Signup failed. Please try again.';
         
         // Handle specific Firebase errors
@@ -154,6 +184,14 @@ async function handleSignup(e) {
             case 'auth/operation-not-allowed':
                 errorMessage = 'Email/password accounts are not enabled.';
                 break;
+            case 'permission-denied':
+                errorMessage = 'Database access denied. Please contact support.';
+                console.error('🔧 SOLUTION: Update Firestore security rules');
+                break;
+            default:
+                if (error.message) {
+                    errorMessage = error.message;
+                }
         }
         
         showMessage(errorMessage, 'error');
