@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Debug Test - 24x7 Cafe</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
+        .test-section { background: #f5f5f5; padding: 20px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        #results { background: #000; color: #00ff00; padding: 15px; border-radius: 5px; font-family: monospace; height: 400px; overflow-y: auto; }
+        .step { margin: 10px 0; padding: 10px; border-left: 4px solid #007bff; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Firebase Connection & Write Test</h1>
+    
+    <div class="test-section">
+        <h3>Step-by-Step Firebase Test</h3>
+        <div class="step">
+            <strong>Step 1:</strong> <button onclick="testStep1()">Test Firebase Loading</button>
+            <div id="step1-result"></div>
+        </div>
+        <div class="step">
+            <strong>Step 2:</strong> <button onclick="testStep2()">Test Firestore Connection</button>
+            <div id="step2-result"></div>
+        </div>
+        <div class="step">
+            <strong>Step 3:</strong> <button onclick="testStep3()">Test Anonymous Auth</button>
+            <div id="step3-result"></div>
+        </div>
+        <div class="step">
+            <strong>Step 4:</strong> <button onclick="testStep4()">Test Firestore Write</button>
+            <div id="step4-result"></div>
+        </div>
+        <div class="step">
+            <strong>Step 5:</strong> <button onclick="testStep5()">Test User Creation & Write</button>
+            <div id="step5-result"></div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Console Output</h3>
+        <div id="results"></div>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    
+    <script>
+        const resultsDiv = document.getElementById('results');
+        
+        function log(message, color = '#00ff00') {
+            const timestamp = new Date().toLocaleTimeString();
+            resultsDiv.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function setStepResult(stepId, success, message) {
+            const resultDiv = document.getElementById(stepId + '-result');
+            resultDiv.className = success ? 'success' : 'error';
+            resultDiv.textContent = message;
+        }
+        
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+        
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCNN5gijXy7DEi9YeY4shCYvu6ktMbkIDM",
+            authDomain: "cafe-24-7-bfb39.firebaseapp.com",
+            projectId: "cafe-24-7-bfb39",
+            storageBucket: "cafe-24-7-bfb39.firebasestorage.app",
+            messagingSenderId: "164822694308",
+            appId: "1:164822694308:web:79c41a8fa157ed4906e931",
+            measurementId: "G-QHW0PYZXEX"
+        };
+        
+        let auth, db;
+        
+        async function testStep1() {
+            try {
+                log('🔥 Step 1: Testing Firebase loading...');
+                
+                if (typeof firebase === 'undefined') {
+                    throw new Error('Firebase SDK not loaded');
+                }
+                
+                // Initialize Firebase
+                firebase.initializeApp(firebaseConfig);
+                auth = firebase.auth();
+                db = firebase.firestore();
+                
+                log('✅ Firebase initialized successfully');
+                log('📊 Project ID: ' + firebaseConfig.projectId);
+                
+                setStepResult('step1', true, 'Firebase loaded and initialized successfully');
+                
+            } catch (error) {
+                log('❌ Step 1 failed: ' + error.message, '#ff0000');
+                setStepResult('step1', false, 'Failed: ' + error.message);
+            }
+        }
+        
+        async function testStep2() {
+            try {
+                log('📊 Step 2: Testing Firestore connection...');
+                
+                if (!db) {
+                    throw new Error('Firebase not initialized. Run Step 1 first.');
+                }
+                
+                // Test basic Firestore connection
+                await db.enablePersistence({ synchronizeTabs: true })
+                    .catch((err) => {
+                        log('⚠️ Persistence not enabled: ' + err.code);
+                    });
+                
+                // Try to read from Firestore (this should work even with security rules)
+                const testQuery = await db.collection('test').limit(1).get();
+                log('✅ Firestore connection successful');
+                log('📝 Query executed, docs count: ' + testQuery.size);
+                
+                setStepResult('step2', true, 'Firestore connection successful');
+                
+            } catch (error) {
+                log('❌ Step 2 failed: ' + error.message, '#ff0000');
+                setStepResult('step2', false, 'Failed: ' + error.message);
+            }
+        }
+        
+        async function testStep3() {
+            try {
+                log('👤 Step 3: Testing anonymous authentication...');
+                
+                if (!auth) {
+                    throw new Error('Firebase not initialized. Run Step 1 first.');
+                }
+                
+                // Sign in anonymously to test auth
+                const userCredential = await auth.signInAnonymously();
+                const user = userCredential.user;
+                
+                log('✅ Anonymous auth successful');
+                log('🆔 User ID: ' + user.uid);
+                
+                setStepResult('step3', true, 'Anonymous authentication successful');
+                
+            } catch (error) {
+                log('❌ Step 3 failed: ' + error.message, '#ff0000');
+                setStepResult('step3', false, 'Failed: ' + error.message);
+            }
+        }
+        
+        async function testStep4() {
+            try {
+                log('💾 Step 4: Testing Firestore write...');
+                
+                if (!db || !auth.currentUser) {
+                    throw new Error('Complete previous steps first');
+                }
+                
+                const testData = {
+                    message: 'Test write from debug page',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    userId: auth.currentUser.uid,
+                    testId: Date.now()
+                };
+                
+                log('📝 Attempting to write to debug collection...');
+                const docRef = await db.collection('debug').add(testData);
+                log('✅ Document written with ID: ' + docRef.id);
+                
+                // Try to read it back
+                const doc = await docRef.get();
+                if (doc.exists) {
+                    log('✅ Document read back successfully');
+                    log('📄 Data: ' + JSON.stringify(doc.data()));
+                } else {
+                    log('⚠️ Document not found after write', '#ffaa00');
+                }
+                
+                setStepResult('step4', true, 'Firestore write/read successful');
+                
+            } catch (error) {
+                log('❌ Step 4 failed: ' + error.message, '#ff0000');
+                log('🔍 Error code: ' + (error.code || 'unknown'), '#ff0000');
+                setStepResult('step4', false, 'Failed: ' + error.message);
+            }
+        }
+        
+        async function testStep5() {
+            try {
+                log('👤 Step 5: Testing user creation and data write...');
+                
+                if (!auth || !db) {
+                    throw new Error('Complete previous steps first');
+                }
+                
+                const testEmail = 'debugtest' + Date.now() + '@test.com';
+                const testPassword = 'debug123456';
+                
+                log('📝 Creating test user: ' + testEmail);
+                
+                // Create user
+                const userCredential = await auth.createUserWithEmailAndPassword(testEmail, testPassword);
+                const user = userCredential.user;
+                
+                log('✅ User created: ' + user.email);
+                
+                // Try to write user data
+                log('💾 Writing user data to users collection...');
+                
+                await db.collection('users').doc(user.uid).set({
+                    firstName: 'Debug',
+                    lastName: 'Test',
+                    name: 'Debug Test',
+                    email: user.email,
+                    phone: '+91 98765 43210',
+                    hostel: 'Test Hostel',
+                    roomNumber: '999',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    isActive: true
+                });
+                
+                log('✅ User data written successfully');
+                
+                // Try to read it back
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                if (userDoc.exists) {
+                    log('✅ User data read back successfully');
+                    log('📄 User data: ' + JSON.stringify(userDoc.data()));
+                } else {
+                    log('⚠️ User document not found after write', '#ffaa00');
+                }
+                
+                // Clean up - delete the test user
+                await user.delete();
+                log('🗑️ Test user deleted');
+                
+                setStepResult('step5', true, 'User creation and data write successful');
+                
+            } catch (error) {
+                log('❌ Step 5 failed: ' + error.message, '#ff0000');
+                log('🔍 Error code: ' + (error.code || 'unknown'), '#ff0000');
+                setStepResult('step5', false, 'Failed: ' + error.message);
+            }
+        }
+        
+        // Auto-run first step
+        window.addEventListener('load', () => {
+            setTimeout(testStep1, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -40,14 +40,23 @@ function setupEventListeners() {
 }
 
 function loadUserOrders() {
-    if (!firebaseAuth.currentUser) {
+    // Wait for Firebase to be ready
+    if (!window.firebaseAuth || !window.firebaseDB) {
+        console.log('⏳ Waiting for Firebase to load...');
+        setTimeout(loadUserOrders, 1000);
+        return;
+    }
+
+    if (!window.firebaseAuth.currentUser) {
         showLoginRequired();
         return;
     }
 
+    console.log('📋 Loading orders for user:', window.firebaseAuth.currentUser.email);
+
     // Query user's orders from Firestore
-    firebaseDB.collection('orders')
-        .where('userId', '==', firebaseAuth.currentUser.uid)
+    window.firebaseDB.collection('orders')
+        .where('userId', '==', window.firebaseAuth.currentUser.uid)
         .orderBy('createdAt', 'desc')
         .onSnapshot((querySnapshot) => {
             const userOrders = [];
@@ -58,6 +67,8 @@ function loadUserOrders() {
                 });
             });
             
+            console.log('📋 Found', userOrders.length, 'orders');
+            
             if (userOrders.length === 0) {
                 showNoOrders();
                 return;
@@ -65,19 +76,26 @@ function loadUserOrders() {
             
             displayOrders(userOrders);
         }, (error) => {
-            console.error('Error loading orders:', error);
+            console.error('❌ Error loading orders:', error);
             showNoOrders();
         });
 }
 
 function filterUserOrders(status) {
-    if (!firebaseAuth.currentUser) {
+    // Wait for Firebase to be ready
+    if (!window.firebaseAuth || !window.firebaseDB) {
+        console.log('⏳ Waiting for Firebase to load...');
+        setTimeout(() => filterUserOrders(status), 1000);
+        return;
+    }
+
+    if (!window.firebaseAuth.currentUser) {
         showLoginRequired();
         return;
     }
 
-    let query = firebaseDB.collection('orders')
-        .where('userId', '==', firebaseAuth.currentUser.uid)
+    let query = window.firebaseDB.collection('orders')
+        .where('userId', '==', window.firebaseAuth.currentUser.uid)
         .orderBy('createdAt', 'desc');
     
     if (status !== 'all') {
@@ -100,7 +118,7 @@ function filterUserOrders(status) {
         
         displayOrders(userOrders);
     }).catch((error) => {
-        console.error('Error filtering orders:', error);
+        console.error('❌ Error filtering orders:', error);
         showNoOrdersForFilter();
     });
 }
@@ -233,11 +251,18 @@ function formatDateTime(dateString) {
 
 // Global functions
 window.showOrderDetails = function(orderId) {
+    // Wait for Firebase to be ready
+    if (!window.firebaseDB) {
+        console.log('⏳ Waiting for Firebase to load...');
+        setTimeout(() => showOrderDetails(orderId), 1000);
+        return;
+    }
+
     // Find order by firestoreId or regular id
-    firebaseDB.collection('orders').doc(orderId).get()
+    window.firebaseDB.collection('orders').doc(orderId).get()
         .then((doc) => {
             if (!doc.exists) {
-                console.error('Order not found');
+                console.error('❌ Order not found:', orderId);
                 return;
             }
             
@@ -245,7 +270,7 @@ window.showOrderDetails = function(orderId) {
             showOrderDetailsModal(order);
         })
         .catch((error) => {
-            console.error('Error fetching order details:', error);
+            console.error('❌ Error fetching order details:', error);
         });
 };
 

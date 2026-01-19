@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - 24x7 Cafe</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; }
+        .debug-section { background: #f5f5f5; padding: 20px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        #log { background: #000; color: #00ff00; padding: 15px; border-radius: 5px; font-family: monospace; height: 400px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Firebase Debug Page</h1>
+    
+    <div class="debug-section">
+        <h3>Quick Tests</h3>
+        <button onclick="testFirebaseConnection()">Test Firebase Connection</button>
+        <button onclick="testCreateUser()">Test Create User</button>
+        <button onclick="testSaveToFirestore()">Test Save to Firestore</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+    
+    <div class="debug-section">
+        <h3>Console Output</h3>
+        <div id="log"></div>
+    </div>
+
+    <!-- Firebase CDN -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    
+    <script>
+        const logDiv = document.getElementById('log');
+        
+        function log(message, color = '#00ff00') {
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearLog() {
+            logDiv.innerHTML = '';
+        }
+        
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCNN5gijXy7DEi9YeY4shCYvu6ktMbkIDM",
+            authDomain: "cafe-24-7-bfb39.firebaseapp.com",
+            projectId: "cafe-24-7-bfb39",
+            storageBucket: "cafe-24-7-bfb39.firebasestorage.app",
+            messagingSenderId: "164822694308",
+            appId: "1:164822694308:web:79c41a8fa157ed4906e931",
+            measurementId: "G-QHW0PYZXEX"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        
+        function testFirebaseConnection() {
+            log('🔥 Testing Firebase connection...');
+            
+            if (typeof firebase === 'undefined') {
+                log('❌ Firebase not loaded', '#ff0000');
+                return;
+            }
+            
+            log('✅ Firebase loaded successfully');
+            log('📊 Project ID: ' + firebaseConfig.projectId);
+            
+            // Test Firestore
+            db.collection('test').limit(1).get()
+                .then(() => {
+                    log('✅ Firestore connection successful');
+                })
+                .catch((error) => {
+                    log('❌ Firestore error: ' + error.message, '#ff0000');
+                });
+        }
+        
+        async function testCreateUser() {
+            try {
+                log('👤 Testing user creation...');
+                
+                const testEmail = 'debug' + Date.now() + '@test.com';
+                const testPassword = 'debug123456';
+                
+                log('📝 Creating user: ' + testEmail);
+                
+                // Create user
+                const userCredential = await auth.createUserWithEmailAndPassword(testEmail, testPassword);
+                const user = userCredential.user;
+                
+                log('✅ User created: ' + user.email);
+                
+                // Save user data to Firestore
+                log('💾 Saving user data to Firestore...');
+                
+                await db.collection('users').doc(user.uid).set({
+                    firstName: 'Debug',
+                    lastName: 'User',
+                    name: 'Debug User',
+                    email: user.email,
+                    phone: '+91 98765 43210',
+                    hostel: 'Debug Hostel',
+                    roomNumber: '999',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    isActive: true
+                });
+                
+                log('✅ User data saved to Firestore');
+                
+                // Clean up - delete the user
+                await user.delete();
+                log('🗑️ Test user deleted');
+                
+            } catch (error) {
+                log('❌ User creation error: ' + error.message, '#ff0000');
+            }
+        }
+        
+        async function testSaveToFirestore() {
+            try {
+                log('💾 Testing Firestore write...');
+                
+                const testData = {
+                    message: 'Debug test from debug page',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    testId: Date.now()
+                };
+                
+                const docRef = await db.collection('debug').add(testData);
+                log('✅ Document written with ID: ' + docRef.id);
+                
+                // Read it back
+                const doc = await docRef.get();
+                if (doc.exists) {
+                    log('✅ Document read successfully: ' + JSON.stringify(doc.data()));
+                } else {
+                    log('❌ Document not found after write', '#ff0000');
+                }
+                
+                // Clean up
+                await docRef.delete();
+                log('🗑️ Test document deleted');
+                
+            } catch (error) {
+                log('❌ Firestore write error: ' + error.message, '#ff0000');
+            }
+        }
+        
+        // Auto-run connection test
+        window.addEventListener('load', () => {
+            setTimeout(testFirebaseConnection, 1000);
+        });
+    </script>
+</body>
+</html>

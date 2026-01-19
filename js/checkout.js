@@ -236,13 +236,18 @@ function generateOrderId() {
 // Save order to Firestore
 async function saveOrder(order) {
     try {
+        // Wait for Firebase to be ready
+        await window.waitForFirebase();
+
+        console.log('💾 Saving order to Firestore:', order.id);
+        
         // Add order to Firestore
-        const docRef = await firebaseDB.collection('orders').add({
+        const docRef = await window.firebaseDB.collection('orders').add({
             ...order,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         
-        console.log('✅ Order saved with ID:', docRef.id);
+        console.log('✅ Order saved with Firestore ID:', docRef.id);
         
         // Update the order with the Firestore document ID
         order.firestoreId = docRef.id;
@@ -250,6 +255,9 @@ async function saveOrder(order) {
         return docRef.id;
     } catch (error) {
         console.error('❌ Error saving order:', error);
+        if (error.code === 'permission-denied') {
+            console.error('🔍 Order save permission denied. Check security rules in FIRESTORE-RULES-FIX.md');
+        }
         throw error;
     }
 }

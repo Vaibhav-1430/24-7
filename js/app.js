@@ -12,19 +12,16 @@ class FirebaseCartManager {
         this.initCartListener();
     }
 
-    initCartListener() {
-        // Wait for Firebase to be loaded
-        const waitForFirebase = () => {
-            if (typeof firebase === 'undefined' || !window.firebaseAuth) {
-                setTimeout(waitForFirebase, 500);
-                return;
-            }
-            
+    async initCartListener() {
+        try {
+            // Wait for Firebase to be ready
+            console.log('🛒 Waiting for Firebase to initialize cart...');
+            await window.waitForFirebase();
             console.log('🛒 Setting up cart listener');
             this.setupCartListener();
-        };
-        
-        waitForFirebase();
+        } catch (error) {
+            console.error('❌ Failed to initialize cart:', error);
+        }
     }
 
     setupCartListener() {
@@ -50,6 +47,9 @@ class FirebaseCartManager {
                         }
                     }, (error) => {
                         console.error('❌ Cart listener error:', error);
+                        if (error.code === 'permission-denied') {
+                            console.error('🔍 Cart permission denied. Check security rules in FIRESTORE-RULES-FIX.md');
+                        }
                     });
             } else {
                 // User logged out, clear cart
@@ -79,6 +79,9 @@ class FirebaseCartManager {
             this.updateCartUI();
         } catch (error) {
             console.error('❌ Error loading cart:', error);
+            if (error.code === 'permission-denied') {
+                console.error('🔍 Cart permission denied. Check security rules in FIRESTORE-RULES-FIX.md');
+            }
             this.cart = [];
         }
     }
@@ -97,6 +100,9 @@ class FirebaseCartManager {
             console.log('✅ Cart saved to Firebase');
         } catch (error) {
             console.error('❌ Error saving cart:', error);
+            if (error.code === 'permission-denied') {
+                console.error('🔍 Cart save permission denied. Check security rules in FIRESTORE-RULES-FIX.md');
+            }
         }
     }
 
@@ -1075,20 +1081,16 @@ class FirebaseAuthManager {
         this.initAuthListener();
     }
 
-    initAuthListener() {
-        // Wait for Firebase to be loaded
-        const waitForFirebase = () => {
-            if (typeof firebase === 'undefined' || !window.firebaseAuth) {
-                console.log('⏳ Waiting for Firebase to load...');
-                setTimeout(waitForFirebase, 500);
-                return;
-            }
-            
-            console.log('✅ Firebase loaded, setting up auth listener');
+    async initAuthListener() {
+        try {
+            // Wait for Firebase to be ready
+            console.log('⏳ Waiting for Firebase to initialize...');
+            await window.waitForFirebase();
+            console.log('✅ Firebase ready, setting up auth listener');
             this.setupAuthListener();
-        };
-        
-        waitForFirebase();
+        } catch (error) {
+            console.error('❌ Failed to initialize Firebase auth:', error);
+        }
     }
 
     setupAuthListener() {
@@ -1109,6 +1111,7 @@ class FirebaseAuthManager {
                     console.log('✅ User data loaded:', this.currentUser.email);
                 } catch (error) {
                     console.error('⚠️ Error fetching user data:', error);
+                    console.error('🔍 This might be a Firestore security rules issue');
                     this.currentUser = {
                         id: user.uid,
                         email: user.email,
@@ -1126,9 +1129,8 @@ class FirebaseAuthManager {
 
     async signup(userData) {
         try {
-            if (!window.firebaseAuth) {
-                throw new Error('Firebase not initialized');
-            }
+            // Wait for Firebase to be ready
+            await window.waitForFirebase();
 
             const { email, password, firstName, lastName, phone, hostel, roomNumber } = userData;
             
@@ -1157,15 +1159,17 @@ class FirebaseAuthManager {
             return user;
         } catch (error) {
             console.error('❌ Signup error:', error);
+            if (error.code === 'permission-denied') {
+                console.error('🔍 Firestore permission denied. Check security rules in FIRESTORE-RULES-FIX.md');
+            }
             throw error;
         }
     }
 
     async login(email, password) {
         try {
-            if (!window.firebaseAuth) {
-                throw new Error('Firebase not initialized');
-            }
+            // Wait for Firebase to be ready
+            await window.waitForFirebase();
 
             console.log('🔐 Logging in user:', email);
             const userCredential = await window.firebaseAuth.signInWithEmailAndPassword(email, password);
@@ -1179,9 +1183,8 @@ class FirebaseAuthManager {
 
     async logout() {
         try {
-            if (!window.firebaseAuth) {
-                throw new Error('Firebase not initialized');
-            }
+            // Wait for Firebase to be ready
+            await window.waitForFirebase();
 
             await window.firebaseAuth.signOut();
             console.log('✅ User logged out successfully');
