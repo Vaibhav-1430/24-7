@@ -23,16 +23,13 @@ const connectDB = async () => {
         console.log('🔧 Connecting to MongoDB Atlas...');
         console.log('🔧 MongoDB URI (first 50 chars):', mongoUri.substring(0, 50) + '...');
         
+        // Simplified connection options - removed problematic options
         const connection = await mongoose.connect(mongoUri, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
             serverSelectionTimeoutMS: 15000, // 15 seconds
             socketTimeoutMS: 45000, // 45 seconds
             maxPoolSize: 10,
             minPoolSize: 1,
-            maxIdleTimeMS: 30000,
-            bufferCommands: false,
-            bufferMaxEntries: 0
+            maxIdleTimeMS: 30000
         });
 
         cachedConnection = connection;

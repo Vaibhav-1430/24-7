@@ -1,6 +1,5 @@
 const { connectDB } = require('./utils/db');
 const { successResponse, errorResponse } = require('./utils/response');
-const { validateEnvironmentForFunction, getEnvironmentInfo } = require('./utils/environment');
 
 exports.handler = async (event, context) => {
     // Handle CORS preflight
@@ -16,20 +15,28 @@ exports.handler = async (event, context) => {
     }
 
     try {
-        console.log('🔧 Debug: Starting connection test...');
+        console.log('🔧 Debug: Starting simple connection test...');
         
         // Check environment variables
-        const envInfo = getEnvironmentInfo();
-        console.log('🔧 Environment info:', envInfo);
+        const envCheck = {
+            MONGODB_URI_SET: !!process.env.MONGODB_URI,
+            MONGODB_URI_LENGTH: process.env.MONGODB_URI ? process.env.MONGODB_URI.length : 0,
+            JWT_SECRET_SET: !!process.env.JWT_SECRET,
+            JWT_SECRET_LENGTH: process.env.JWT_SECRET ? process.env.JWT_SECRET.length : 0,
+            NODE_ENV: process.env.NODE_ENV || 'not set'
+        };
         
-        // Validate environment
-        const envError = validateEnvironmentForFunction();
-        if (envError) {
-            console.error('❌ Environment validation failed:', envError);
-            return envError;
+        console.log('🔧 Environment check:', envCheck);
+        
+        if (!process.env.MONGODB_URI) {
+            throw new Error('MONGODB_URI environment variable is not set');
         }
         
-        console.log('✅ Environment validation passed');
+        if (!process.env.JWT_SECRET) {
+            throw new Error('JWT_SECRET environment variable is not set');
+        }
+        
+        console.log('✅ Environment variables are set');
         
         // Test database connection
         console.log('🔧 Testing database connection...');
@@ -38,7 +45,7 @@ exports.handler = async (event, context) => {
         
         return successResponse({
             message: 'All systems working!',
-            environment: envInfo,
+            environment: envCheck,
             timestamp: new Date().toISOString(),
             mongodbConnected: true
         }, 'Debug test successful');
@@ -51,7 +58,6 @@ exports.handler = async (event, context) => {
             500,
             {
                 error: error.message,
-                stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
                 timestamp: new Date().toISOString()
             }
         );
