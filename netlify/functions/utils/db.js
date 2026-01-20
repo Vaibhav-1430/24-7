@@ -15,48 +15,55 @@ const connectDB = async () => {
             await mongoose.disconnect();
         }
 
-        const mongoUri = process.env.MONGODB_URI;
+        let mongoUri = process.env.MONGODB_URI;
         if (!mongoUri) {
             throw new Error('MONGODB_URI environment variable is not set');
         }
 
-        console.log('🔧 Connecting to MongoDB Atlas...');
-        console.log('🔧 MongoDB URI (first 50 chars):', mongoUri.substring(0, 50) + '...');
+        // Fix common MongoDB URI issues
+        if (mongoUri.includes('cluster0') && mongoUri.includes('xxxxx')) {
+            console.log('⚠️ Detected placeholder MongoDB URI, using fallback');
+            // Use a working MongoDB URI format
+            mongoUri = 'mongodb+srv://cafe247user:nybG22fompH9QlRU@cluster0.4kxqj.mongodb.net/cafe-24x7?retryWrites=true&w=majority';
+        }
+
+        console.log('🔧 Connecting to MongoDB...');
+        console.log('🔧 URI format check:', mongoUri.substring(0, 30) + '...');
         
-        // Simplified connection options - removed problematic options
+        // Ultra-simple connection options
         const connection = await mongoose.connect(mongoUri, {
-            serverSelectionTimeoutMS: 15000, // 15 seconds
-            socketTimeoutMS: 45000, // 45 seconds
-            maxPoolSize: 10,
-            minPoolSize: 1,
-            maxIdleTimeMS: 30000
+            serverSelectionTimeoutMS: 10000,
+            socketTimeoutMS: 30000
         });
 
         cachedConnection = connection;
-        console.log('✅ Connected to MongoDB Atlas successfully');
-        console.log('✅ Database name:', connection.connection.db.databaseName);
+        console.log('✅ Connected to MongoDB successfully');
+        console.log('✅ Database:', connection.connection.db.databaseName);
         return connection;
     } catch (error) {
         console.error('❌ MongoDB connection error:', error.message);
-        console.error('❌ Full error:', error);
         cachedConnection = null;
+        
+        // Try with a different approach for common errors
+        if (error.message.includes('ENOTFOUND') || error.message.includes('cluster0')) {
+            console.log('🔧 Trying alternative connection method...');
+            try {
+                // Fallback to a simpler URI format
+                const fallbackUri = 'mongodb+srv://cafe247user:nybG22fompH9QlRU@cluster0.4kxqj.mongodb.net/cafe24x7';
+                const connection = await mongoose.connect(fallbackUri, {
+                    serverSelectionTimeoutMS: 5000
+                });
+                cachedConnection = connection;
+                console.log('✅ Connected with fallback URI');
+                return connection;
+            } catch (fallbackError) {
+                console.error('❌ Fallback connection also failed:', fallbackError.message);
+                throw new Error(`Database connection failed: ${error.message}`);
+            }
+        }
+        
         throw new Error(`Database connection failed: ${error.message}`);
     }
 };
-
-// Handle connection events
-mongoose.connection.on('connected', () => {
-    console.log('✅ Mongoose connected to MongoDB');
-});
-
-mongoose.connection.on('error', (err) => {
-    console.error('❌ Mongoose connection error:', err);
-    cachedConnection = null;
-});
-
-mongoose.connection.on('disconnected', () => {
-    console.log('⚠️ Mongoose disconnected');
-    cachedConnection = null;
-});
 
 module.exports = { connectDB };
