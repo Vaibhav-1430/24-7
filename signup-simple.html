@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - 24x7 Cafe</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f5f5; }
+        .container { max-width: 500px; margin: 50px auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 20px rgba(0,0,0,0.1); }
+        h1 { color: #e74c3c; text-align: center; margin-bottom: 30px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; font-weight: 500; color: #333; }
+        input, select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px; }
+        input:focus, select:focus { outline: none; border-color: #e74c3c; }
+        .form-row { display: flex; gap: 15px; }
+        .form-row .form-group { flex: 1; }
+        .btn { width: 100%; background: #e74c3c; color: white; padding: 15px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; margin-top: 20px; }
+        .btn:hover { background: #c0392b; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        .message { padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .loading { opacity: 0.7; }
+        .spinner { display: none; }
+        .loading .spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid #ffffff; border-top: 3px solid transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-right: 10px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .demo-btn { background: #3498db; margin-top: 10px; }
+        .demo-btn:hover { background: #2980b9; }
+        .back-link { text-align: center; margin-top: 20px; }
+        .back-link a { color: #e74c3c; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍽️ Join 24x7 Cafe</h1>
+        
+        <div id="message"></div>
+        
+        <form id="signupForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="firstName">First Name</label>
+                    <input type="text" id="firstName" name="firstName" required>
+                </div>
+                <div class="form-group">
+                    <label for="lastName">Last Name</label>
+                    <input type="text" id="lastName" name="lastName" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" name="phone" required>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="hostel">Hostel</label>
+                    <select id="hostel" name="hostel" required>
+                        <option value="">Select Hostel</option>
+                        <option value="Hostel A">Hostel A</option>
+                        <option value="Hostel B">Hostel B</option>
+                        <option value="Hostel C">Hostel C</option>
+                        <option value="Girls Hostel 1">Girls Hostel 1</option>
+                        <option value="Girls Hostel 2">Girls Hostel 2</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="roomNumber">Room Number</label>
+                    <input type="text" id="roomNumber" name="roomNumber" required placeholder="e.g., 101">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required minlength="6">
+            </div>
+            
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required>
+            </div>
+            
+            <button type="submit" class="btn" id="submitBtn">
+                <span class="spinner"></span>
+                <span class="btn-text">Create Account</span>
+            </button>
+            
+            <button type="button" class="btn demo-btn" onclick="fillDemoData()">
+                Fill Demo Data
+            </button>
+        </form>
+        
+        <div class="back-link">
+            <a href="index.html">← Back to Home</a> | 
+            <a href="login.html">Already have an account?</a>
+        </div>
+    </div>
+
+    <!-- Load Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/api-client.js"></script>
+    <script src="js/auth-manager-clean.js"></script>
+
+    <script>
+        const messageEl = document.getElementById('message');
+        const submitBtn = document.getElementById('submitBtn');
+        const btnText = submitBtn.querySelector('.btn-text');
+        const spinner = submitBtn.querySelector('.spinner');
+
+        function showMessage(text, type) {
+            messageEl.innerHTML = `<div class="message ${type}">${text}</div>`;
+            setTimeout(() => {
+                if (type === 'error') messageEl.innerHTML = '';
+            }, 5000);
+        }
+
+        function setLoading(loading) {
+            submitBtn.disabled = loading;
+            submitBtn.classList.toggle('loading', loading);
+            btnText.textContent = loading ? 'Creating Account...' : 'Create Account';
+        }
+
+        function fillDemoData() {
+            document.getElementById('firstName').value = 'John';
+            document.getElementById('lastName').value = 'Doe';
+            document.getElementById('email').value = 'john.doe@example.com';
+            document.getElementById('phone').value = '9876543210';
+            document.getElementById('hostel').value = 'Hostel A';
+            document.getElementById('roomNumber').value = '101';
+            document.getElementById('password').value = 'demo123456';
+            document.getElementById('confirmPassword').value = 'demo123456';
+        }
+
+        document.getElementById('signupForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const password = formData.get('password');
+            const confirmPassword = formData.get('confirmPassword');
+            
+            // Validation
+            if (password !== confirmPassword) {
+                showMessage('Passwords do not match!', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showMessage('Password must be at least 6 characters long!', 'error');
+                return;
+            }
+            
+            setLoading(true);
+            
+            try {
+                const userData = {
+                    firstName: formData.get('firstName').trim(),
+                    lastName: formData.get('lastName').trim(),
+                    email: formData.get('email').trim(),
+                    phone: formData.get('phone').trim(),
+                    hostel: formData.get('hostel'),
+                    roomNumber: formData.get('roomNumber').trim(),
+                    password: password
+                };
+                
+                console.log('🚀 Creating account:', userData);
+                
+                // Wait for auth manager to be ready
+                if (!window.authManagerClean) {
+                    throw new Error('Authentication system not ready. Please refresh the page.');
+                }
+                
+                const result = await authManagerClean.signup(userData);
+                
+                showMessage(`✅ Account created successfully! Welcome ${result.fullName}!`, 'success');
+                
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+                
+            } catch (error) {
+                console.error('❌ Signup failed:', error);
+                showMessage(`❌ Signup failed: ${error.message}`, 'error');
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        // Check if everything loaded
+        setTimeout(() => {
+            if (!window.CONFIG || !window.apiClient || !window.authManagerClean) {
+                showMessage('⚠️ Some components failed to load. Please refresh the page.', 'error');
+            } else {
+                console.log('✅ All components loaded successfully');
+                console.log('🔧 API Mode:', window.apiClient.mockMode ? 'Mock' : 'Live');
+            }
+        }, 1000);
+    </script>
+</body>
+</html>

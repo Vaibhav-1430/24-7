@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Signup - 24x7 Cafe</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; }
+        .btn { background: #e74c3c; color: white; padding: 15px 30px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        .btn:hover { background: #c0392b; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        .result { margin: 20px 0; padding: 15px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Signup Test Page</h1>
+        
+        <div id="status" class="result info">
+            <strong>Status:</strong> Loading JavaScript files...
+        </div>
+        
+        <div id="debug"></div>
+        
+        <h3>Quick Signup Test</h3>
+        <button id="testSignup" class="btn" disabled>Test Signup Function</button>
+        
+        <div id="result"></div>
+        
+        <hr style="margin: 30px 0;">
+        <p><a href="signup.html">← Back to Real Signup Page</a></p>
+    </div>
+
+    <!-- Load the same scripts as signup page -->
+    <script src="js/config.js"></script>
+    <script src="js/api-client.js"></script>
+    <script src="js/auth-manager-clean.js"></script>
+    <script src="js/cart-manager-clean.js"></script>
+
+    <script>
+        let statusEl = document.getElementById('status');
+        let debugEl = document.getElementById('debug');
+        let resultEl = document.getElementById('result');
+        let testBtn = document.getElementById('testSignup');
+
+        function updateStatus(message, type = 'info') {
+            statusEl.className = `result ${type}`;
+            statusEl.innerHTML = `<strong>Status:</strong> ${message}`;
+        }
+
+        function addDebug(message) {
+            debugEl.innerHTML += `<div>${message}</div>`;
+        }
+
+        // Wait for everything to load
+        setTimeout(() => {
+            // Check if all components are loaded
+            let allLoaded = true;
+            let debugInfo = [];
+
+            if (window.CONFIG) {
+                debugInfo.push(`✅ Config loaded: ${window.CONFIG.API_BASE_URL}`);
+            } else {
+                debugInfo.push(`❌ Config not loaded`);
+                allLoaded = false;
+            }
+
+            if (window.apiClient) {
+                debugInfo.push(`✅ API Client loaded (Mock: ${window.apiClient.mockMode})`);
+            } else {
+                debugInfo.push(`❌ API Client not loaded`);
+                allLoaded = false;
+            }
+
+            if (window.authManagerClean) {
+                debugInfo.push(`✅ Auth Manager loaded`);
+            } else {
+                debugInfo.push(`❌ Auth Manager not loaded`);
+                allLoaded = false;
+            }
+
+            debugEl.innerHTML = debugInfo.join('<br>');
+
+            if (allLoaded) {
+                updateStatus('All components loaded successfully!', 'success');
+                testBtn.disabled = false;
+            } else {
+                updateStatus('Some components failed to load', 'error');
+            }
+        }, 1000);
+
+        // Test signup function
+        testBtn.addEventListener('click', async function() {
+            testBtn.disabled = true;
+            testBtn.textContent = 'Testing...';
+            
+            try {
+                const testUserData = {
+                    firstName: 'Test',
+                    lastName: 'User',
+                    email: 'test@example.com',
+                    phone: '9876543210',
+                    hostel: 'Test Hostel',
+                    roomNumber: '101',
+                    password: 'test123456'
+                };
+
+                console.log('🧪 Testing signup with:', testUserData);
+                
+                const result = await authManagerClean.signup(testUserData);
+                
+                resultEl.innerHTML = `
+                    <div class="result success">
+                        <strong>✅ Signup Test Successful!</strong><br>
+                        User created: ${result.fullName}<br>
+                        Email: ${result.email}
+                    </div>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                `;
+                
+            } catch (error) {
+                console.error('🧪 Test failed:', error);
+                
+                resultEl.innerHTML = `
+                    <div class="result error">
+                        <strong>❌ Signup Test Failed!</strong><br>
+                        Error: ${error.message}
+                    </div>
+                    <pre>${error.stack}</pre>
+                `;
+            } finally {
+                testBtn.disabled = false;
+                testBtn.textContent = 'Test Signup Function';
+            }
+        });
+    </script>
+</body>
+</html>

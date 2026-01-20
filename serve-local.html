@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Development - 24x7 Cafe</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #e74c3c; }
+        .option {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid #e74c3c;
+        }
+        .btn {
+            background: #e74c3c;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin: 10px 10px 10px 0;
+        }
+        .btn:hover { background: #c0392b; }
+        .btn-secondary {
+            background: #3498db;
+        }
+        .btn-secondary:hover { background: #2980b9; }
+        code {
+            background: #f1f2f6;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍽️ 24x7 Cafe - Local Development</h1>
+        
+        <div class="warning">
+            <strong>⚠️ Development Mode Detected</strong><br>
+            You're running the website locally. Choose how you want to test it:
+        </div>
+
+        <div class="option">
+            <h3>🚀 Option 1: Full Netlify Development (Recommended)</h3>
+            <p>Run with full backend functionality using Netlify Dev:</p>
+            <ol>
+                <li>Install Netlify CLI: <code>npm install -g netlify-cli</code></li>
+                <li>Run: <code>netlify dev</code></li>
+                <li>Open: <code>http://localhost:8888</code></li>
+            </ol>
+            <p><strong>✅ Pros:</strong> Full functionality, real database, all features work</p>
+            <p><strong>❌ Cons:</strong> Requires setup, needs MongoDB connection</p>
+        </div>
+
+        <div class="option">
+            <h3>🎭 Option 2: Mock Mode (Quick Test)</h3>
+            <p>Test the frontend with mock data (no backend required):</p>
+            <a href="index.html" class="btn">🏠 Go to Homepage</a>
+            <a href="signup.html" class="btn btn-secondary">📝 Test Signup</a>
+            <a href="menu.html" class="btn btn-secondary">🍕 View Menu</a>
+            <p><strong>✅ Pros:</strong> Works immediately, no setup required</p>
+            <p><strong>❌ Cons:</strong> Mock data only, limited functionality</p>
+        </div>
+
+        <div class="option">
+            <h3>🌐 Option 3: Deploy to Netlify (Production)</h3>
+            <p>Deploy to production for full functionality:</p>
+            <ol>
+                <li>Push code to GitHub</li>
+                <li>Connect to Netlify</li>
+                <li>Set environment variables</li>
+                <li>Deploy</li>
+            </ol>
+            <p><strong>✅ Pros:</strong> Full production environment, shareable URL</p>
+            <p><strong>❌ Cons:</strong> Requires deployment setup</p>
+        </div>
+
+        <div class="success">
+            <strong>💡 Quick Start:</strong> Click "Test Signup" above to try the signup form with mock data, or follow Option 1 for full functionality.
+        </div>
+
+        <hr style="margin: 30px 0;">
+        
+        <h3>🔧 Current Configuration</h3>
+        <p><strong>Mode:</strong> <span id="currentMode">Loading...</span></p>
+        <p><strong>API URL:</strong> <span id="apiUrl">Loading...</span></p>
+        
+        <script>
+            // Load config and display current settings
+            document.addEventListener('DOMContentLoaded', function() {
+                // Load config
+                const script = document.createElement('script');
+                script.src = 'js/config.js';
+                script.onload = function() {
+                    document.getElementById('currentMode').textContent = 
+                        window.CONFIG.API_BASE_URL === 'mock' ? 'Mock Mode' : 'Netlify Functions';
+                    document.getElementById('apiUrl').textContent = window.CONFIG.API_BASE_URL;
+                };
+                document.head.appendChild(script);
+            });
+        </script>
+    </div>
+</body>
+</html>

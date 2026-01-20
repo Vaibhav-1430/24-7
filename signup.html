@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' https: http: ws:;">
     <title>Sign Up - 24x7 Cafe</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/auth.css">
@@ -160,12 +161,12 @@
     </section>
 
     <!-- Configuration -->
-    <script src="js/config.js"></script>
+    <script src="js/config.js" onerror="console.error('Failed to load config.js')"></script>
     
     <!-- Clean MongoDB Backend Scripts -->
-    <script src="js/api-client.js"></script>
-    <script src="js/auth-manager-clean.js"></script>
-    <script src="js/cart-manager-clean.js"></script>
+    <script src="js/api-client.js" onerror="console.error('Failed to load api-client.js')"></script>
+    <script src="js/auth-manager-clean.js" onerror="console.error('Failed to load auth-manager-clean.js')"></script>
+    <script src="js/cart-manager-clean.js" onerror="console.error('Failed to load cart-manager-clean.js')"></script>
     
     <script>
         // Password toggle function
@@ -249,12 +250,21 @@
             // Get form data
             const formData = new FormData(e.target);
             
+            // Debug: Log all form data
+            console.log('📋 Form data collected:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`  ${key}: ${value}`);
+            }
+            
             // Validate form
             const validation = validateForm(formData);
             if (!validation.isValid) {
+                console.log('❌ Form validation failed:', validation.message);
                 showMessage(validation.message, 'error');
                 return;
             }
+            
+            console.log('✅ Form validation passed');
             
             // Show loading state
             submitBtn.disabled = true;
@@ -273,11 +283,13 @@
                     password: formData.get('password')
                 };
                 
-                console.log('📝 Creating account for:', userData.email);
+                console.log('📝 User data prepared:', userData);
+                console.log('🔧 Auth manager available:', !!window.authManagerClean);
                 
                 // Create account using auth manager
-                await authManagerClean.signup(userData);
+                const result = await authManagerClean.signup(userData);
                 
+                console.log('✅ Signup result:', result);
                 showMessage('Account created successfully! Redirecting...', 'success');
                 
                 // Redirect after short delay
@@ -287,6 +299,7 @@
                 
             } catch (error) {
                 console.error('❌ Signup error:', error);
+                console.error('❌ Error details:', error.message, error.stack);
                 
                 let errorMessage = 'Signup failed. Please try again.';
                 if (error.message) {
@@ -320,6 +333,17 @@
 
         // Navigation menu toggle
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 DOM Content Loaded');
+            console.log('🔧 Config available:', !!window.CONFIG);
+            console.log('🔧 API Client available:', !!window.apiClient);
+            console.log('🔧 Auth Manager available:', !!window.authManagerClean);
+            
+            // Test API client initialization
+            if (window.apiClient) {
+                console.log('🔧 API Client base URL:', window.apiClient.baseURL);
+                console.log('🔧 API Client mock mode:', window.apiClient.mockMode);
+            }
+            
             const hamburger = document.querySelector('.hamburger');
             const navMenu = document.querySelector('.nav-menu');
 

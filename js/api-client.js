@@ -6,11 +6,20 @@ class APIClient {
             (window.location.hostname === 'localhost' 
                 ? 'http://localhost:8888/.netlify/functions'
                 : `${window.location.origin}/.netlify/functions`);
+        
         this.token = localStorage.getItem('authToken');
+        this.mockMode = this.baseURL === 'mock';
+        
+        console.log('🌐 API Client initialized:', this.mockMode ? 'MOCK MODE' : this.baseURL);
     }
 
     // Helper method to make API calls
     async request(endpoint, options = {}) {
+        // Handle mock mode for local development
+        if (this.mockMode) {
+            return this.handleMockRequest(endpoint, options);
+        }
+        
         const url = `${this.baseURL}${endpoint}`;
         
         const config = {
@@ -51,11 +60,203 @@ class APIClient {
             console.error(`❌ API Error: ${config.method} ${url}`, error);
             
             if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                throw new Error('Cannot connect to backend. Make sure the server is running on http://localhost:5000');
+                throw new Error('Cannot connect to backend. Please make sure you are running "netlify dev" or deploy to Netlify.');
             }
             
             throw error;
         }
+    }
+
+    // Mock request handler for local development without Netlify Dev
+    async handleMockRequest(endpoint, options = {}) {
+        console.log(`🎭 Mock API Request: ${options.method || 'GET'} ${endpoint}`);
+        console.log(`🎭 Request body:`, options.body);
+        
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        const method = options.method || 'GET';
+        
+        try {
+            // Mock responses for different endpoints
+            switch (endpoint) {
+                case '/auth-signup':
+                    if (method === 'POST') {
+                        const userData = JSON.parse(options.body || '{}');
+                        
+                        // Validate required fields
+                        if (!userData.firstName || !userData.lastName || !userData.email) {
+                            throw new Error('Please provide all required fields');
+                        }
+                        
+                        if (!userData.password || userData.password.length < 6) {
+                            throw new Error('Password must be at least 6 characters long');
+                        }
+                        
+                        const mockUser = {
+                            id: 'mock_' + Date.now(),
+                            firstName: userData.firstName,
+                            lastName: userData.lastName,
+                            email: userData.email,
+                            phone: userData.phone || '+91 9876543210',
+                            hostel: userData.hostel || 'Demo Hostel',
+                            roomNumber: userData.roomNumber || '101',
+                            isActive: true,
+                            isAdmin: userData.email.includes('admin'),
+                            fullName: `${userData.firstName} ${userData.lastName}`,
+                            createdAt: new Date().toISOString()
+                        };
+                        
+                        const mockToken = 'mock_token_' + Date.now();
+                        this.token = mockToken;
+                        localStorage.setItem('authToken', mockToken);
+                        localStorage.setItem('currentUser', JSON.stringify(mockUser));
+                        
+                        console.log('✅ Mock signup successful:', mockUser);
+                        
+                        return {
+                            success: true,
+                            message: 'Account created successfully',
+                            data: {
+                                token: mockToken,
+                                user: mockUser
+                            }
+                        };
+                    }
+                    break;
+                    
+                case '/auth-login':
+                    if (method === 'POST') {
+                        const loginData = JSON.parse(options.body || '{}');
+                        
+                        if (!loginData.email || !loginData.password) {
+                            throw new Error('Please provide email and password');
+                        }
+                        
+                        // Mock successful login
+                        const mockUser = {
+                            id: 'mock_user_123',
+                            firstName: 'Demo',
+                            lastName: 'Student',
+                            email: loginData.email,
+                            phone: '+91 98765 43210',
+                            hostel: 'Demo Hostel',
+                            roomNumber: '101',
+                            isActive: true,
+                            isAdmin: loginData.email.includes('admin'),
+                            fullName: 'Demo Student',
+                            createdAt: new Date().toISOString()
+                        };
+                        
+                        const mockToken = 'mock_token_' + Date.now();
+                        this.token = mockToken;
+                        localStorage.setItem('authToken', mockToken);
+                        localStorage.setItem('currentUser', JSON.stringify(mockUser));
+                        
+                        return {
+                            success: true,
+                            message: 'Login successful',
+                            data: {
+                                token: mockToken,
+                                user: mockUser
+                            }
+                        };
+                    }
+                    break;
+                    
+                case '/auth-me':
+                    if (this.token && this.token.startsWith('mock_token_')) {
+                        const savedUser = localStorage.getItem('currentUser');
+                        if (savedUser) {
+                            return {
+                                success: true,
+                                message: 'User data retrieved successfully',
+                                data: {
+                                    user: JSON.parse(savedUser)
+                                }
+                            };
+                        }
+                    }
+                    throw new Error('Not authenticated');
+                    
+                case '/menu-get':
+                    return {
+                        success: true,
+                        message: 'Menu items retrieved successfully',
+                        data: [
+                            {
+                                id: 1,
+                                name: "Masala Dosa",
+                                description: "Crispy rice crepe with spiced potato filling",
+                                price: 80,
+                                category: "South Indian",
+                                image: "images/masala-dosa.jpg",
+                                available: true,
+                                popular: true
+                            },
+                            {
+                                id: 2,
+                                name: "Chicken Biryani",
+                                description: "Fragrant basmati rice with tender chicken",
+                                price: 180,
+                                category: "Rice",
+                                image: "images/chicken-biryani.jpg",
+                                available: true,
+                                popular: true
+                            },
+                            {
+                                id: 3,
+                                name: "Paneer Butter Masala",
+                                description: "Soft paneer cubes in rich tomato-based creamy gravy",
+                                price: 140,
+                                category: "North Indian",
+                                image: "images/paneer-butter-masala.jpg",
+                                available: true,
+                                popular: false
+                            }
+                        ]
+                    };
+                    
+                case '/cart-get':
+                    return {
+                        success: true,
+                        message: 'Cart retrieved successfully',
+                        data: {
+                            items: [],
+                            total: 0,
+                            itemCount: 0
+                        }
+                    };
+                    
+                case '/cart-add':
+                    if (method === 'POST') {
+                        const cartItem = JSON.parse(options.body || '{}');
+                        return {
+                            success: true,
+                            message: 'Item added to cart successfully',
+                            data: {
+                                items: [cartItem],
+                                total: cartItem.price * cartItem.quantity,
+                                itemCount: cartItem.quantity
+                            }
+                        };
+                    }
+                    break;
+                    
+                default:
+                    console.log(`🎭 Mock endpoint not implemented: ${endpoint}`);
+                    return {
+                        success: true,
+                        message: 'Mock response',
+                        data: {}
+                    };
+            }
+        } catch (error) {
+            console.error('🎭 Mock request error:', error);
+            throw error;
+        }
+        
+        throw new Error('Mock endpoint not implemented: ' + endpoint);
     }
 
     // Authentication methods
@@ -65,7 +266,7 @@ class APIClient {
             body: JSON.stringify(userData)
         });
 
-        if (response.success && response.data.token) {
+        if (response.success && response.data && response.data.token) {
             this.token = response.data.token;
             localStorage.setItem('authToken', this.token);
             localStorage.setItem('currentUser', JSON.stringify(response.data.user));
@@ -80,7 +281,7 @@ class APIClient {
             body: JSON.stringify({ email, password })
         });
 
-        if (response.success && response.data.token) {
+        if (response.success && response.data && response.data.token) {
             this.token = response.data.token;
             localStorage.setItem('authToken', this.token);
             localStorage.setItem('currentUser', JSON.stringify(response.data.user));
@@ -198,3 +399,6 @@ const apiClient = new APIClient();
 
 // Make it available globally
 window.apiClient = apiClient;
+
+// Debug log
+console.log('🔧 API Client initialized:', apiClient);

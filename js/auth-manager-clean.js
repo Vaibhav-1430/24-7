@@ -153,3 +153,6 @@ const authManagerClean = new AuthManagerClean();
 // Make it globally available
 window.authManager = authManagerClean;
 window.authManagerClean = authManagerClean;
+
+// Debug log
+console.log('🔧 Auth Manager initialized:', authManagerClean);
