@@ -19,8 +19,8 @@
   "author": "24x7 Cafe Team",
   "license": "MIT",
   "dependencies": {
-    "mongoose": "^8.0.0",
-    "jsonwebtoken": "^9.0.0",
+    "mongoose": "^8.0.3",
+    "jsonwebtoken": "^9.0.2",
     "bcryptjs": "^2.4.3"
   },
   "devDependencies": {
@@ -31,7 +31,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-username/24x7-cafe.git"
+    "url": "https://github.com/Vaibhav-1430/24-7.git"
   },
-  "homepage": "https://24x7-cafe.netlify.app"
+  "homepage": "https://cafe24-7.netlify.app"
 }

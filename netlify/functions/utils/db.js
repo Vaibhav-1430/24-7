@@ -5,7 +5,7 @@ let cachedConnection = null;
 const connectDB = async () => {
     // If we have a cached connection and it's ready, return it
     if (cachedConnection && mongoose.connection.readyState === 1) {
-        console.log('Using cached MongoDB connection');
+        console.log('✅ Using cached MongoDB connection');
         return cachedConnection;
     }
 
@@ -20,12 +20,13 @@ const connectDB = async () => {
             throw new Error('MONGODB_URI environment variable is not set');
         }
 
-        console.log('Connecting to MongoDB Atlas...');
+        console.log('🔧 Connecting to MongoDB Atlas...');
+        console.log('🔧 MongoDB URI (first 50 chars):', mongoUri.substring(0, 50) + '...');
         
         const connection = await mongoose.connect(mongoUri, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
-            serverSelectionTimeoutMS: 10000, // 10 seconds
+            serverSelectionTimeoutMS: 15000, // 15 seconds
             socketTimeoutMS: 45000, // 45 seconds
             maxPoolSize: 10,
             minPoolSize: 1,
@@ -35,10 +36,12 @@ const connectDB = async () => {
         });
 
         cachedConnection = connection;
-        console.log('✅ Connected to MongoDB Atlas');
+        console.log('✅ Connected to MongoDB Atlas successfully');
+        console.log('✅ Database name:', connection.connection.db.databaseName);
         return connection;
     } catch (error) {
-        console.error('❌ MongoDB connection error:', error);
+        console.error('❌ MongoDB connection error:', error.message);
+        console.error('❌ Full error:', error);
         cachedConnection = null;
         throw new Error(`Database connection failed: ${error.message}`);
     }
@@ -46,16 +49,16 @@ const connectDB = async () => {
 
 // Handle connection events
 mongoose.connection.on('connected', () => {
-    console.log('Mongoose connected to MongoDB');
+    console.log('✅ Mongoose connected to MongoDB');
 });
 
 mongoose.connection.on('error', (err) => {
-    console.error('Mongoose connection error:', err);
+    console.error('❌ Mongoose connection error:', err);
     cachedConnection = null;
 });
 
 mongoose.connection.on('disconnected', () => {
-    console.log('Mongoose disconnected');
+    console.log('⚠️ Mongoose disconnected');
     cachedConnection = null;
 });
 

@@ -1,7 +1,6 @@
 const { connectDB } = require('./utils/db');
 const { generateToken } = require('./utils/auth');
 const { successResponse, errorResponse } = require('./utils/response');
-const { validateEnvironmentForFunction } = require('./utils/environment');
 const User = require('./models/User');
 
 exports.handler = async (event, context) => {
@@ -24,33 +23,33 @@ exports.handler = async (event, context) => {
     try {
         console.log('🚀 Auth signup function started');
         
-        // Validate environment variables first
-        console.log('🔧 Validating environment...');
-        const envError = validateEnvironmentForFunction();
-        if (envError) {
-            console.error('❌ Environment validation failed:', envError);
-            return envError;
+        // Check environment variables
+        if (!process.env.MONGODB_URI) {
+            console.error('❌ MONGODB_URI not set');
+            return errorResponse('Database configuration missing', 500);
         }
-        console.log('✅ Environment validation passed');
+        
+        if (!process.env.JWT_SECRET) {
+            console.error('❌ JWT_SECRET not set');
+            return errorResponse('Authentication configuration missing', 500);
+        }
+        
+        console.log('✅ Environment variables present');
 
         // Parse request body
         let requestBody;
         try {
             requestBody = JSON.parse(event.body || '{}');
-            console.log('📝 Request body parsed:', { 
-                email: requestBody.email, 
-                firstName: requestBody.firstName,
-                lastName: requestBody.lastName 
-            });
+            console.log('📝 Request received for email:', requestBody.email);
         } catch (parseError) {
             console.error('❌ JSON parse error:', parseError);
-            return errorResponse('Invalid JSON in request body', 400);
+            return errorResponse('Invalid request format', 400);
         }
 
         const { firstName, lastName, email, phone, hostel, roomNumber, password } = requestBody;
 
-        // Validation
-        if (!firstName || !lastName || !email || !phone || !hostel || !roomNumber || !password) {
+        // Basic validation
+        if (!firstName || !lastName || !email || !password) {
             console.error('❌ Missing required fields');
             return errorResponse('Please provide all required fields', 400);
         }
@@ -63,40 +62,40 @@ exports.handler = async (event, context) => {
         // Connect to database
         console.log('🔧 Connecting to database...');
         await connectDB();
-        console.log('✅ Database connected successfully');
+        console.log('✅ Database connected');
 
-        // Check if user already exists
+        // Check if user exists
         console.log('🔧 Checking if user exists...');
         const existingUser = await User.findOne({ email: email.toLowerCase() });
         if (existingUser) {
             console.error('❌ User already exists:', email);
             return errorResponse('User with this email already exists', 400);
         }
-        console.log('✅ User does not exist, proceeding with creation');
+        console.log('✅ User does not exist, creating new user');
 
         // Create new user
-        console.log('🔧 Creating new user...');
+        console.log('🔧 Creating user...');
         const newUser = new User({
             firstName: firstName.trim(),
             lastName: lastName.trim(),
             email: email.toLowerCase().trim(),
-            phone: phone.trim(),
-            hostel: hostel.trim(),
-            roomNumber: roomNumber.trim(),
+            phone: phone?.trim() || '',
+            hostel: hostel?.trim() || '',
+            roomNumber: roomNumber?.trim() || '',
             password,
             isActive: true,
             isAdmin: false
         });
 
         const savedUser = await newUser.save();
-        console.log('✅ User created successfully:', savedUser._id);
+        console.log('✅ User created with ID:', savedUser._id);
 
         // Generate token
-        console.log('🔧 Generating JWT token...');
+        console.log('🔧 Generating token...');
         const token = generateToken(savedUser._id.toString());
-        console.log('✅ JWT token generated');
+        console.log('✅ Token generated');
 
-        // Return user without password
+        // Prepare response
         const userResponse = {
             id: savedUser._id,
             firstName: savedUser.firstName,
@@ -118,35 +117,28 @@ exports.handler = async (event, context) => {
         }, 'Account created successfully');
 
     } catch (error) {
-        console.error('❌ Signup error:', error);
+        console.error('❌ Signup error:', error.message);
         console.error('❌ Error stack:', error.stack);
         
-        // Handle specific MongoDB errors
+        // Handle specific errors
         if (error.code === 11000) {
-            console.error('❌ Duplicate key error');
             return errorResponse('User with this email already exists', 400);
         }
         
         if (error.name === 'ValidationError') {
             const validationErrors = Object.values(error.errors).map(err => err.message);
-            console.error('❌ Validation error:', validationErrors);
             return errorResponse(`Validation error: ${validationErrors.join(', ')}`, 400);
         }
 
+        if (error.message.includes('Database connection failed')) {
+            return errorResponse('Database connection error. Please try again.', 500);
+        }
+
         if (error.message.includes('JWT_SECRET')) {
-            console.error('❌ JWT Secret missing');
-            return errorResponse('Server configuration error', 500);
+            return errorResponse('Authentication system error', 500);
         }
 
-        if (error.message.includes('MONGODB_URI')) {
-            console.error('❌ MongoDB URI missing');
-            return errorResponse('Database configuration error', 500);
-        }
-
-        // Generic server error
-        return errorResponse('Server error during signup. Please try again.', 500, {
-            error: error.message,
-            timestamp: new Date().toISOString()
-        });
+        // Generic error
+        return errorResponse('Server error during signup. Please try again.', 500);
     }
 };
