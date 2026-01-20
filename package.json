@@ -1,26 +1,37 @@
 {
-  "name": "24x7-cafe-fullstack",
+  "name": "24x7-cafe",
   "version": "1.0.0",
-  "description": "24x7 Cafe Food Ordering System - Full Stack",
+  "description": "24x7 College Cafe - Online Food Ordering System",
   "main": "index.html",
   "scripts": {
-    "build": "echo 'No build step required for static frontend'",
     "dev": "netlify dev",
-    "start": "netlify dev"
+    "build": "echo 'No build step required for static site'",
+    "deploy": "netlify deploy --prod",
+    "test": "echo 'Tests will be added in future versions'"
   },
+  "keywords": [
+    "food-delivery",
+    "restaurant",
+    "college-cafe",
+    "online-ordering",
+    "netlify-functions"
+  ],
+  "author": "24x7 Cafe Team",
+  "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
     "mongoose": "^8.0.0",
-    "cors": "^2.8.5",
-    "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2",
-    "dotenv": "^16.3.1"
+    "jsonwebtoken": "^9.0.0",
+    "bcryptjs": "^2.4.3"
   },
   "devDependencies": {
-    "@netlify/functions": "^2.4.0",
     "netlify-cli": "^17.0.0"
   },
-  "keywords": ["food", "ordering", "restaurant", "mongodb", "netlify"],
-  "author": "24x7 Cafe",
-  "license": "MIT"
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/24x7-cafe.git"
+  },
+  "homepage": "https://24x7-cafe.netlify.app"
 }

@@ -114,7 +114,7 @@ class APIClient {
 
     // Menu methods
     async getMenuItems(category = null) {
-        const endpoint = category ? `/menu?category=${category}` : '/menu';
+        const endpoint = category ? `/menu-get?category=${category}` : '/menu-get';
         const response = await this.request(endpoint);
         return response.data || [];
     }
@@ -131,12 +131,12 @@ class APIClient {
 
     // Cart methods
     async getCart() {
-        const response = await this.request('/cart');
+        const response = await this.request('/cart-get');
         return response.data;
     }
 
     async addToCart(item) {
-        const response = await this.request('/cart', {
+        const response = await this.request('/cart-add', {
             method: 'POST',
             body: JSON.stringify(item)
         });
@@ -144,7 +144,7 @@ class APIClient {
     }
 
     async updateCartItem(itemId, quantity) {
-        const response = await this.request(`/cart/update/${itemId}`, {
+        const response = await this.request(`/cart-update/${itemId}`, {
             method: 'PUT',
             body: JSON.stringify({ quantity })
         });
@@ -152,14 +152,14 @@ class APIClient {
     }
 
     async removeFromCart(itemId) {
-        const response = await this.request(`/cart/remove/${itemId}`, {
+        const response = await this.request(`/cart-remove/${itemId}`, {
             method: 'DELETE'
         });
         return response.data;
     }
 
     async clearCart() {
-        const response = await this.request('/cart/clear', {
+        const response = await this.request('/cart-clear', {
             method: 'DELETE'
         });
         return response.data;
@@ -167,7 +167,7 @@ class APIClient {
 
     // Order methods
     async createOrder(orderData) {
-        const response = await this.request('/orders', {
+        const response = await this.request('/orders-create', {
             method: 'POST',
             body: JSON.stringify(orderData)
         });
@@ -175,18 +175,18 @@ class APIClient {
     }
 
     async getOrders(status = null) {
-        const endpoint = status ? `/orders?status=${status}` : '/orders';
+        const endpoint = status ? `/orders-get?status=${status}` : '/orders-get';
         const response = await this.request(endpoint);
         return response.data || [];
     }
 
     async getOrder(orderId) {
-        const response = await this.request(`/orders/${orderId}`);
+        const response = await this.request(`/orders-get/${orderId}`);
         return response.data;
     }
 
     async cancelOrder(orderId) {
-        const response = await this.request(`/orders/${orderId}/cancel`, {
+        const response = await this.request(`/orders-cancel/${orderId}`, {
             method: 'PUT'
         });
         return response.data;

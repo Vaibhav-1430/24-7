@@ -2,7 +2,7 @@ const { connectDB } = require('./utils/db');
 const { verifyToken } = require('./utils/auth');
 const { successResponse, errorResponse } = require('./utils/response');
 const { validateEnvironmentForFunction } = require('./utils/environment');
-const User = require('./models/User');
+const Cart = require('./models/Cart');
 
 exports.handler = async (event, context) => {
     // Handle CORS preflight
@@ -36,32 +36,29 @@ exports.handler = async (event, context) => {
 
         await connectDB();
 
-        // Find user by ID
-        const user = await User.findById(authResult.userId).select('-password');
+        // Find user's cart
+        let cart = await Cart.findOne({ userId: authResult.userId });
         
-        if (!user) {
-            return errorResponse('User not found', 404);
+        if (!cart) {
+            // Create empty cart if none exists
+            cart = new Cart({
+                userId: authResult.userId,
+                items: []
+            });
+            await cart.save();
         }
 
-        // Return user data
-        const userData = {
-            id: user._id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            phone: user.phone,
-            hostel: user.hostel,
-            roomNumber: user.roomNumber,
-            isActive: user.isActive,
-            isAdmin: user.isAdmin,
-            fullName: `${user.firstName} ${user.lastName}`,
-            createdAt: user.createdAt
+        // Return cart with calculated totals
+        const cartData = {
+            items: cart.items,
+            total: cart.total,
+            itemCount: cart.itemCount
         };
 
-        return successResponse({ user: userData }, 'User data retrieved successfully');
+        return successResponse(cartData, 'Cart retrieved successfully');
 
     } catch (error) {
-        console.error('Auth me error:', error);
-        return errorResponse('Server error while retrieving user data', 500, error.message);
+        console.error('Cart get error:', error);
+        return errorResponse('Server error while retrieving cart', 500, error.message);
     }
 };

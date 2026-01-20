@@ -8,22 +8,23 @@ const orderItemSchema = new mongoose.Schema({
     },
     name: {
         type: String,
-        required: true
+        required: [true, 'Item name is required']
     },
     price: {
         type: Number,
-        required: true,
-        min: 0
+        required: [true, 'Price is required'],
+        min: [0, 'Price cannot be negative']
     },
     quantity: {
         type: Number,
-        required: true,
-        min: 1
+        required: [true, 'Quantity is required'],
+        min: [1, 'Quantity must be at least 1']
     },
     instructions: {
         type: String,
         trim: true,
-        default: ''
+        default: '',
+        maxlength: [200, 'Instructions cannot exceed 200 characters']
     }
 });
 
@@ -42,33 +43,41 @@ const orderSchema = new mongoose.Schema({
     delivery: {
         hostel: {
             type: String,
-            required: true
+            required: [true, 'Hostel name is required'],
+            trim: true
         },
         roomNumber: {
             type: String,
-            required: true
+            required: [true, 'Room number is required'],
+            trim: true
         },
         instructions: {
             type: String,
             trim: true,
-            default: ''
+            default: '',
+            maxlength: [200, 'Delivery instructions cannot exceed 200 characters']
         }
     },
     contact: {
         name: {
             type: String,
-            required: true
+            required: [true, 'Contact name is required'],
+            trim: true
         },
         phone: {
             type: String,
-            required: true
+            required: [true, 'Phone number is required'],
+            trim: true
         }
     },
     payment: {
         method: {
             type: String,
-            required: true,
-            enum: ['cod', 'upi']
+            required: [true, 'Payment method is required'],
+            enum: {
+                values: ['cod', 'upi'],
+                message: 'Payment method must be either cod or upi'
+            }
         },
         transactionId: {
             type: String,
@@ -78,29 +87,32 @@ const orderSchema = new mongoose.Schema({
     pricing: {
         subtotal: {
             type: Number,
-            required: true,
-            min: 0
+            required: [true, 'Subtotal is required'],
+            min: [0, 'Subtotal cannot be negative']
         },
         deliveryFee: {
             type: Number,
-            required: true,
-            min: 0
+            required: [true, 'Delivery fee is required'],
+            min: [0, 'Delivery fee cannot be negative']
         },
         tax: {
             type: Number,
-            required: true,
-            min: 0
+            required: [true, 'Tax is required'],
+            min: [0, 'Tax cannot be negative']
         },
         total: {
             type: Number,
-            required: true,
-            min: 0
+            required: [true, 'Total is required'],
+            min: [0, 'Total cannot be negative']
         }
     },
     status: {
         type: String,
         required: true,
-        enum: ['received', 'preparing', 'ready', 'delivered', 'cancelled'],
+        enum: {
+            values: ['received', 'preparing', 'ready', 'delivered', 'cancelled'],
+            message: 'Invalid order status'
+        },
         default: 'received'
     },
     estimatedDelivery: {
@@ -115,8 +127,9 @@ const orderSchema = new mongoose.Schema({
 orderSchema.pre('save', async function(next) {
     if (!this.orderId) {
         try {
-            // Get the count of existing orders
-            const orderCount = await mongoose.model('Order').countDocuments();
+            // Get the count of existing orders to generate sequential ID
+            const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
+            const orderCount = await Order.countDocuments();
             const nextOrderNumber = orderCount + 1;
             this.orderId = `001${nextOrderNumber.toString().padStart(3, '0')}`;
         } catch (error) {
@@ -134,4 +147,13 @@ orderSchema.index({ user: 1, createdAt: -1 });
 orderSchema.index({ status: 1, createdAt: -1 });
 orderSchema.index({ orderId: 1 });
 
-module.exports = mongoose.model('Order', orderSchema);
+// Transform output
+orderSchema.set('toJSON', {
+    transform: function(doc, ret) {
+        delete ret.__v;
+        return ret;
+    }
+});
+
+// Export model, handling potential re-compilation in serverless environment
+module.exports = mongoose.models.Order || mongoose.model('Order', orderSchema);

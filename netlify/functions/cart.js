@@ -28,15 +28,34 @@ exports.handler = async (event, context) => {
 
         const userId = authResult.userId;
 
+        // Parse the path to determine the action
+        const pathParts = event.path.split('/').filter(part => part);
+        const action = pathParts[pathParts.length - 1];
+
         switch (event.httpMethod) {
             case 'GET':
                 return await getCart(userId);
             case 'POST':
-                return await addToCart(userId, JSON.parse(event.body));
+                if (action === 'add' || pathParts.length === 2) { // /cart or /cart/add
+                    return await addToCart(userId, JSON.parse(event.body || '{}'));
+                }
+                return errorResponse('Invalid POST action', 400);
             case 'PUT':
-                return await updateCartItem(userId, event.path, JSON.parse(event.body));
+                if (action.startsWith('update') || pathParts.includes('update')) {
+                    const itemId = pathParts[pathParts.length - 1];
+                    return await updateCartItem(userId, itemId, JSON.parse(event.body || '{}'));
+                }
+                return errorResponse('Invalid PUT action', 400);
             case 'DELETE':
-                return await handleDelete(userId, event.path);
+                if (action === 'clear') {
+                    return await clearCart(userId);
+                } else if (action.startsWith('remove') || pathParts.includes('remove')) {
+                    const itemId = pathParts[pathParts.length - 1];
+                    return await removeFromCart(userId, itemId);
+                } else {
+                    // Assume the last part is the item ID to remove
+                    return await removeFromCart(userId, action);
+                }
             default:
                 return errorResponse('Method not allowed', 405);
         }
@@ -71,13 +90,11 @@ async function addToCart(userId, itemData) {
 
         // Validation
         if (!menuItemId || !name || !price || !quantity) {
-            return errorResponse('Please provide all required fields', 400);
+            return errorResponse('Please provide all required fields: menuItemId, name, price, quantity', 400);
         }
 
-        // Verify menu item exists
-        const menuItem = await MenuItem.findById(menuItemId);
-        if (!menuItem) {
-            return errorResponse('Menu item not found', 404);
+        if (quantity < 1 || quantity > 10) {
+            return errorResponse('Quantity must be between 1 and 10', 400);
         }
 
         let cart = await Cart.findOne({ user: userId });
@@ -98,6 +115,9 @@ async function addToCart(userId, itemData) {
         if (existingItemIndex > -1) {
             // Update quantity
             cart.items[existingItemIndex].quantity += quantity;
+            if (cart.items[existingItemIndex].quantity > 10) {
+                cart.items[existingItemIndex].quantity = 10;
+            }
         } else {
             // Add new item
             cart.items.push({
@@ -113,18 +133,17 @@ async function addToCart(userId, itemData) {
 
         return successResponse(cart, 'Item added to cart');
     } catch (error) {
+        console.error('Add to cart error:', error);
         return errorResponse('Error adding to cart', 500, error.message);
     }
 }
 
-async function updateCartItem(userId, path, updateData) {
+async function updateCartItem(userId, itemId, updateData) {
     try {
-        const pathParts = path.split('/');
-        const itemId = pathParts[pathParts.length - 1];
         const { quantity } = updateData;
 
-        if (!quantity || quantity < 1) {
-            return errorResponse('Invalid quantity', 400);
+        if (!quantity || quantity < 1 || quantity > 10) {
+            return errorResponse('Invalid quantity. Must be between 1 and 10', 400);
         }
 
         const cart = await Cart.findOne({ user: userId });
@@ -143,18 +162,8 @@ async function updateCartItem(userId, path, updateData) {
 
         return successResponse(cart, 'Cart updated');
     } catch (error) {
+        console.error('Update cart error:', error);
         return errorResponse('Error updating cart', 500, error.message);
-    }
-}
-
-async function handleDelete(userId, path) {
-    const pathParts = path.split('/');
-    
-    if (pathParts.includes('clear')) {
-        return await clearCart(userId);
-    } else {
-        const itemId = pathParts[pathParts.length - 1];
-        return await removeFromCart(userId, itemId);
     }
 }
 
@@ -176,6 +185,7 @@ async function removeFromCart(userId, itemId) {
 
         return successResponse(cart, 'Item removed from cart');
     } catch (error) {
+        console.error('Remove from cart error:', error);
         return errorResponse('Error removing from cart', 500, error.message);
     }
 }
@@ -197,6 +207,7 @@ async function clearCart(userId) {
 
         return successResponse(cart, 'Cart cleared');
     } catch (error) {
+        console.error('Clear cart error:', error);
         return errorResponse('Error clearing cart', 500, error.message);
     }
 }

@@ -1,5 +1,6 @@
 const { connectDB } = require('./utils/db');
 const { successResponse, errorResponse } = require('./utils/response');
+const { validateEnvironmentForFunction } = require('./utils/environment');
 const MenuItem = require('./models/MenuItem');
 
 exports.handler = async (event, context) => {
@@ -20,6 +21,12 @@ exports.handler = async (event, context) => {
     }
 
     try {
+        // Validate environment variables first
+        const envError = validateEnvironmentForFunction();
+        if (envError) {
+            return envError;
+        }
+
         await connectDB();
 
         const { category, available, popular } = event.queryStringParameters || {};

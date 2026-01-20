@@ -37,10 +37,10 @@ class AuthManagerClean {
             const response = await apiClient.signup(userData);
             
             if (response.success) {
-                this.currentUser = response.user;
+                this.currentUser = response.data.user;
                 console.log('✅ Account created successfully');
                 this.updateAuthUI();
-                return response.user;
+                return response.data.user;
             } else {
                 throw new Error(response.message);
             }
@@ -57,10 +57,10 @@ class AuthManagerClean {
             const response = await apiClient.login(email, password);
             
             if (response.success) {
-                this.currentUser = response.user;
+                this.currentUser = response.data.user;
                 console.log('✅ Login successful');
                 this.updateAuthUI();
-                return response.user;
+                return response.data.user;
             } else {
                 throw new Error(response.message);
             }

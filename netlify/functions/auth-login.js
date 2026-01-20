@@ -1,6 +1,7 @@
 const { connectDB } = require('./utils/db');
 const { generateToken } = require('./utils/auth');
 const { successResponse, errorResponse } = require('./utils/response');
+const { validateEnvironmentForFunction } = require('./utils/environment');
 const User = require('./models/User');
 const bcrypt = require('bcryptjs');
 
@@ -22,9 +23,23 @@ exports.handler = async (event, context) => {
     }
 
     try {
+        // Validate environment variables first
+        const envError = validateEnvironmentForFunction();
+        if (envError) {
+            return envError;
+        }
+
         await connectDB();
 
-        const { email, password } = JSON.parse(event.body);
+        let requestBody;
+        try {
+            requestBody = JSON.parse(event.body);
+        } catch (parseError) {
+            console.error('JSON parse error:', parseError);
+            return errorResponse('Invalid JSON in request body', 400);
+        }
+
+        const { email, password } = requestBody;
 
         // Validation
         if (!email || !password) {
@@ -32,7 +47,7 @@ exports.handler = async (event, context) => {
         }
 
         // Find user
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email: email.toLowerCase() });
         if (!user) {
             return errorResponse('Invalid email or password', 400);
         }
@@ -49,10 +64,22 @@ exports.handler = async (event, context) => {
         }
 
         // Generate token
-        const token = generateToken(user._id);
+        const token = generateToken(user._id.toString());
 
         // Return user without password
-        const userResponse = user.toJSON();
+        const userResponse = {
+            id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            phone: user.phone,
+            hostel: user.hostel,
+            roomNumber: user.roomNumber,
+            isActive: user.isActive,
+            isAdmin: user.isAdmin,
+            fullName: `${user.firstName} ${user.lastName}`,
+            createdAt: user.createdAt
+        };
 
         return successResponse({
             token,
@@ -61,6 +88,6 @@ exports.handler = async (event, context) => {
 
     } catch (error) {
         console.error('Login error:', error);
-        return errorResponse('Server error during login', 500, error.message);
+        return errorResponse('Server error during login. Please try again.', 500, error.message);
     }
 };

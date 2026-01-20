@@ -10,19 +10,24 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function checkAdminAuth() {
-    // In a real app, this would check proper admin authentication
-    const isAdmin = localStorage.getItem('isAdmin') === 'true';
-    if (!isAdmin) {
-        // Show admin login prompt
-        const password = prompt('Enter admin password:');
-        if (password === 'admin123') {
-            localStorage.setItem('isAdmin', 'true');
-        } else {
-            alert('Invalid admin password');
-            window.location.href = 'index.html';
-            return;
-        }
+    // Check if user is logged in and has admin privileges
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    const token = localStorage.getItem('authToken');
+    
+    if (!currentUser || !token) {
+        alert('Please login first to access admin panel');
+        window.location.href = 'login.html';
+        return;
     }
+    
+    // Check if user has admin privileges
+    if (!currentUser.isAdmin) {
+        alert('Access denied. Admin privileges required.');
+        window.location.href = 'index.html';
+        return;
+    }
+    
+    console.log('✅ Admin access granted for:', currentUser.email);
 }
 
 function setupEventListeners() {
@@ -423,8 +428,14 @@ window.deleteMenuItem = deleteMenuItem;
 
 window.adminLogout = function() {
     if (confirm('Are you sure you want to logout?')) {
-        localStorage.removeItem('isAdmin');
-        window.location.href = 'index.html';
+        // Use the auth manager to logout properly
+        if (window.authManager) {
+            window.authManager.logout();
+        } else {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
     }
 };
 
