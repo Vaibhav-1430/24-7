@@ -1,280 +1,226 @@
-<<<<<<< HEAD
-# 24x7 Cafe - Food Ordering Website
+# 24x7 Cafe - Food Ordering System
 
-A modern, responsive food ordering website designed specifically for college students to order food from their hostels 24/7.
+A modern, responsive food ordering website for college/university cafeterias with student and admin features.
 
 ## 🚀 Features
 
-### Student Features
-- **User Authentication**: Login/Signup with email or phone number
-- **Browse Menu**: View food items organized by categories (Noodles, Veg Manchurian & Gravy, Rolls, Momos, Rice, Extra, Om Let & Maggi, Parathas, Drinks & Snacks)
-- **Full/Half Options**: Select full or half portions where available
-- **Shopping Cart**: Add/remove items, adjust quantities, special instructions
-- **Checkout Process**: Enter delivery details, choose payment method
-- **Order Tracking**: View order status (Received, Preparing, Ready, Delivered)
-- **Responsive Design**: Mobile-first design optimized for all devices
+### For Students
+- **Browse Menu**: View categorized food items with prices
+- **User Authentication**: Secure signup and login system
+- **Shopping Cart**: Add items, modify quantities, and manage orders
+- **Order Placement**: Complete checkout with delivery details
+- **Order History**: View past orders and reorder functionality
+- **Responsive Design**: Works on desktop, tablet, and mobile devices
 
-### Admin Features
-- **Admin Dashboard**: Overview of orders, revenue, and statistics
-- **Order Management**: View and update order status in real-time
-- **Menu Management**: Add, edit, delete, and toggle availability of menu items
-- **Analytics**: View popular items and sales insights
+### For Administrators
+- **Admin Dashboard**: Manage orders and view statistics
+- **Order Management**: Update order status and track deliveries
+- **Menu Management**: Add, edit, and remove menu items
+- **User Management**: View registered users
 
 ## 🛠️ Technology Stack
 
-- **Frontend**: HTML5, CSS3, JavaScript (ES6+)
-- **Styling**: Custom CSS with Flexbox and Grid
-- **Icons**: Font Awesome 6
-- **Fonts**: Google Fonts (Poppins)
-- **Storage**: LocalStorage (for demo purposes)
-- **Responsive**: Mobile-first design approach
+### Frontend
+- **HTML5/CSS3**: Modern, responsive design
+- **JavaScript (ES6+)**: Interactive functionality
+- **Font Awesome**: Icons and UI elements
+- **Google Fonts**: Typography
+
+### Backend
+- **Node.js**: Server runtime
+- **Express.js**: Web framework
+- **MongoDB**: Database
+- **Mongoose**: ODM for MongoDB
+- **JWT**: Authentication
+- **bcryptjs**: Password hashing
 
 ## 📁 Project Structure
 
 ```
-24-7-restaurant/
-├── index.html              # Home page
-├── menu.html               # Menu browsing page
-├── cart.html               # Shopping cart page
-├── checkout.html           # Checkout process page
-├── login.html              # User login page
-├── signup.html             # User registration page
-├── admin.html              # Admin dashboard
-├── css/
-│   ├── style.css           # Main stylesheet
-│   ├── menu.css            # Menu page styles
-│   ├── cart.css            # Cart page styles
-│   ├── checkout.css        # Checkout page styles
-│   ├── auth.css            # Authentication pages styles
-│   └── admin.css           # Admin dashboard styles
-├── js/
-│   ├── app.js              # Main application logic
-│   ├── menu.js             # Menu page functionality
-│   ├── cart.js             # Cart management
-│   ├── checkout.js         # Checkout process
-│   ├── auth.js             # Authentication logic
-│   └── admin.js            # Admin dashboard functionality
-├── images/                 # Image assets (placeholder folder)
-└── README.md              # Project documentation
+24x7-cafe/
+├── index.html              # Homepage
+├── menu.html              # Menu browsing page
+├── cart.html              # Shopping cart page
+├── checkout.html          # Order checkout page
+├── login.html             # User login page
+├── signup.html            # User registration page
+├── orders.html            # Order history page
+├── admin.html             # Admin dashboard
+├── css/                   # Stylesheets
+│   ├── style.css         # Main styles
+│   ├── menu.css          # Menu page styles
+│   ├── cart.css          # Cart page styles
+│   ├── checkout.css      # Checkout page styles
+│   ├── orders.css        # Orders page styles
+│   └── admin.css         # Admin page styles
+├── js/                    # JavaScript files
+│   ├── config.js         # Configuration settings
+│   ├── api-client.js     # API communication
+│   ├── auth-manager-clean.js  # Authentication management
+│   ├── cart-manager-clean.js  # Cart management
+│   ├── app.js            # Main application logic
+│   ├── menu.js           # Menu page functionality
+│   ├── cart.js           # Cart page functionality
+│   ├── checkout.js       # Checkout functionality
+│   ├── orders.js         # Orders page functionality
+│   └── admin.js          # Admin functionality
+├── images/                # Image assets
+├── backend/               # Backend server
+│   ├── server.js         # Main server file
+│   ├── package.json      # Dependencies
+│   ├── models/           # Database models
+│   ├── routes/           # API routes
+│   └── .env.example      # Environment variables template
+└── DEPLOYMENT-GUIDE.md    # Production deployment guide
 ```
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
-### Prerequisites
-- Modern web browser (Chrome, Firefox, Safari, Edge)
-- Local web server (optional, for better development experience)
+### Local Development
 
-### Installation
+1. **Clone the repository**
+```bash
+git clone https://github.com/your-username/24x7-cafe.git
+cd 24x7-cafe
+```
 
-1. **Clone or download the project files**
-   ```bash
-   git clone <repository-url>
-   cd 24-7-restaurant
-   ```
+2. **Set up the backend**
+```bash
+cd backend
+npm install
+cp .env.example .env
+# Edit .env with your MongoDB connection string
+npm start
+```
 
-2. **Open with a local server** (recommended)
-   ```bash
-   # Using Python 3
-   python -m http.server 8000
-   
-   # Using Node.js (if you have live-server installed)
-   npx live-server
-   
-   # Using PHP
-   php -S localhost:8000
-   ```
+3. **Set up the frontend**
+```bash
+# Open another terminal in the root directory
+# Serve the frontend using any static server
+npx http-server -p 8080
+```
 
-3. **Or open directly in browser**
-   - Simply open `index.html` in your web browser
+4. **Access the application**
+- Frontend: http://localhost:8080
+- Backend API: http://localhost:5000
 
-### Demo Credentials
+### Production Deployment
 
-**Student Demo Login:**
-- Click "Demo Student Login" button on login page
-- Or use any email/password combination (demo mode)
+See [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md) for detailed production deployment instructions.
 
-**Admin Access:**
-- Navigate to `/admin.html`
-- Password: `admin123`
+## 🔧 Configuration
 
-## 📱 Pages Overview
+### Environment Variables (Backend)
+```env
+MONGODB_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret_key
+NODE_ENV=production
+FRONTEND_URL=your_frontend_url
+PORT=5000
+```
 
-### 1. Home Page (`index.html`)
-- Restaurant introduction and branding
-- Popular menu items preview
-- Call-to-action buttons
-- Feature highlights
-
-### 2. Menu Page (`menu.html`)
-- Category-based filtering (All, Snacks, Meals, Beverages)
-- Search functionality
-- Item details with add-to-cart modal
-- Quantity selection and special instructions
-
-### 3. Cart Page (`cart.html`)
-- Review selected items
-- Quantity adjustment
-- Remove items
-- Price breakdown with taxes and delivery fee
-- Proceed to checkout
-
-### 4. Checkout Page (`checkout.html`)
-- Delivery information form
-- Contact details
-- Payment method selection (COD/UPI)
-- Order summary and confirmation
-
-### 5. Authentication Pages
-- **Login** (`login.html`): User login with demo option
-- **Signup** (`signup.html`): New user registration
-
-### 6. Admin Dashboard (`admin.html`)
-- Order management and status updates
-- Menu item management (CRUD operations)
-- Sales analytics and popular items
-- Real-time dashboard statistics
-
-## 🎨 Design Features
-
-### Color Scheme
-- Primary: #e74c3c (Red)
-- Secondary: #3498db (Blue)
-- Success: #27ae60 (Green)
-- Background: #f8f9fa (Light Gray)
-
-### Typography
-- Font Family: Poppins (Google Fonts)
-- Responsive font sizes
-- Clear hierarchy and readability
-
-### Responsive Design
-- Mobile-first approach
-- Breakpoints: 480px, 768px, 968px
-- Flexible grid layouts
-- Touch-friendly interface
-
-## 💾 Data Management
-
-### LocalStorage Structure
+### Frontend Configuration
+Update `js/config.js` with your production API URL:
 ```javascript
-// User session
-currentUser: {
-  id: string,
-  name: string,
-  email: string,
-  phone: string,
-  hostel: string,
-  roomNumber: string
-}
-
-// Shopping cart
-cart: [{
-  id: number,
-  name: string,
-  price: number,
-  quantity: number,
-  instructions: string
-}]
-
-// Orders
-orders: [{
-  id: string,
-  userId: string,
-  items: array,
-  delivery: object,
-  contact: object,
-  payment: object,
-  pricing: object,
-  status: string,
-  orderTime: string
-}]
-
-// Menu items (admin)
-adminMenuItems: [menu_item_objects]
+API_BASE_URL: 'https://your-backend-url.herokuapp.com/api'
 ```
 
-## 🔧 Customization
+## 📱 Menu Items
 
-### Adding New Menu Items
-1. Access admin dashboard (`/admin.html`)
-2. Navigate to "Menu Management"
-3. Click "Add New Item"
-4. Fill in item details and save
+The system comes with a pre-configured menu including:
+- **Noodles**: Various noodle dishes
+- **Veg Manchurian & Gravy**: Vegetarian options
+- **Rolls**: Different types of rolls
+- **Momos**: Steamed and fried varieties
+- **Rice**: Rice-based dishes
+- **Parathas**: Indian flatbreads
+- **Drinks & Snacks**: Beverages and light snacks
 
-### Modifying Styles
-- Edit CSS files in the `/css/` directory
-- Main styles: `style.css`
-- Page-specific styles: individual CSS files
+## 🔐 Authentication
 
-### Adding New Features
-- JavaScript files are modular and well-commented
-- Add new functionality in appropriate JS files
-- Follow existing code patterns and naming conventions
+- **JWT-based authentication**
+- **Secure password hashing with bcrypt**
+- **Session management**
+- **Role-based access (Student/Admin)**
 
-## 🚀 Deployment
+## 💳 Order Management
 
-### Static Hosting (Recommended)
-- **Netlify**: Drag and drop the project folder
-- **Vercel**: Connect GitHub repository
-- **GitHub Pages**: Enable in repository settings
-- **Firebase Hosting**: Use Firebase CLI
+- **Sequential order ID generation** (001001, 001002, etc.)
+- **Order status tracking** (Received, Preparing, Ready, Delivered)
+- **Automatic cart clearing** after successful orders
+- **Order history with filtering options**
 
-### Traditional Web Hosting
-- Upload all files to web server
-- Ensure proper file permissions
-- No server-side requirements
+## 🎨 UI/UX Features
 
-## 🔮 Future Enhancements
+- **Responsive design** for all screen sizes
+- **Modern, clean interface**
+- **Intuitive navigation**
+- **Real-time cart updates**
+- **Loading states and error handling**
+- **Success notifications**
 
-### Backend Integration
-- Replace LocalStorage with proper database
-- Implement real user authentication
-- Add payment gateway integration
-- Real-time order notifications
+## 🔒 Security Features
 
-### Additional Features
-- Order history and reordering
-- User reviews and ratings
-- Loyalty points system
-- Push notifications
-- GPS-based delivery tracking
+- **Input validation and sanitization**
+- **SQL injection prevention**
+- **XSS protection**
+- **CORS configuration**
+- **Secure password storage**
+- **JWT token expiration**
 
-### Technical Improvements
-- Progressive Web App (PWA) features
-- Offline functionality
-- Performance optimizations
-- SEO enhancements
+## 📊 Admin Features
 
-## 🐛 Known Limitations
+- **Order management dashboard**
+- **Real-time order status updates**
+- **User management**
+- **Sales analytics**
+- **Menu item management**
 
-1. **Data Persistence**: Uses LocalStorage (data lost on browser clear)
-2. **Authentication**: Simplified demo authentication
-3. **Payment**: Mock payment system
-4. **Real-time Updates**: No server-side real-time features
-5. **Image Handling**: Placeholder images used
+## 🚀 Performance
 
-## 📄 License
+- **Optimized images and assets**
+- **Minified CSS and JavaScript**
+- **Efficient database queries**
+- **Caching strategies**
+- **CDN integration for fonts and icons**
 
-This project is created for educational and demonstration purposes. Feel free to use and modify as needed.
+## 🐛 Troubleshooting
+
+### Common Issues
+1. **CORS errors**: Check backend CORS configuration
+2. **Database connection**: Verify MongoDB connection string
+3. **Authentication issues**: Check JWT secret and token expiration
+4. **Cart not updating**: Ensure API endpoints are accessible
+
+### Debug Mode
+Enable debug logging by setting `NODE_ENV=development` in your backend environment.
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 📞 Support
 
-For questions or issues:
-- Check the code comments for implementation details
-- Review the browser console for any errors
-- Ensure all files are properly linked and accessible
+For support and questions:
+- **Email**: support@24x7cafe.com
+- **Phone**: +91 98765 43210
+- **Address**: Campus Food Court, University Campus
+
+## 🙏 Acknowledgments
+
+- Font Awesome for icons
+- Google Fonts for typography
+- MongoDB Atlas for database hosting
+- All contributors and testers
 
 ---
 
-**Built with ❤️ for college students who love good food!**
-=======
-# 24-7
->>>>>>> e960e1f57d70ed611570b217d0ccc34d5303fef6
+**Made with ❤️ for college students**

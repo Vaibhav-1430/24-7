@@ -33,22 +33,40 @@ class CartManagerClean {
     async loadCart() {
         if (!authManagerClean.isLoggedIn()) {
             console.log('⚠️ User not logged in, cannot load cart');
+            this.cart = { items: [], total: 0, itemCount: 0 };
+            this.updateCartUI();
             return;
         }
 
         try {
+            console.log('🛒 Loading cart from backend...');
             const cartData = await apiClient.getCart();
-            this.cart = cartData || { items: [], total: 0, itemCount: 0 };
-            console.log('✅ Cart loaded:', this.cart.itemCount, 'items');
+            console.log('🛒 Raw API response:', cartData);
+            
+            // Handle the API response structure properly
+            if (cartData) {
+                this.cart = cartData; // The API returns the cart object directly
+                console.log('✅ Cart loaded and assigned:', this.cart);
+            } else {
+                this.cart = { items: [], total: 0, itemCount: 0 };
+                console.log('⚠️ No cart data received, using empty cart');
+            }
+            
             this.updateCartUI();
+            
+            // Trigger custom event for cart page to refresh
+            window.dispatchEvent(new CustomEvent('cartLoaded', { detail: this.cart }));
+            
         } catch (error) {
             console.error('❌ Error loading cart:', error);
             this.cart = { items: [], total: 0, itemCount: 0 };
+            this.updateCartUI();
         }
     }
 
     async addItem(item) {
         if (!authManagerClean.isLoggedIn()) {
+            console.log('⚠️ User not logged in, redirecting to login');
             alert('Please login to add items to cart');
             window.location.href = 'login.html';
             return;
@@ -57,11 +75,8 @@ class CartManagerClean {
         try {
             console.log('🛒 Adding item to cart:', item.name);
             
-            // Find the menu item ID from the global menu data
-            const menuItem = window.SAMPLE_MENU_ITEMS?.find(menuItem => menuItem.id === item.id);
-            
             const cartItem = {
-                menuItemId: menuItem?._id || item.id,
+                menuItemId: item.id,
                 name: item.name,
                 price: item.price,
                 quantity: item.quantity,
@@ -69,15 +84,27 @@ class CartManagerClean {
             };
 
             const updatedCart = await apiClient.addToCart(cartItem);
+            console.log('🛒 API response after adding item:', updatedCart);
+            
+            // The API returns the updated cart directly
             this.cart = updatedCart;
             
-            console.log('✅ Item added to cart');
+            console.log('✅ Item added to cart successfully, new cart:', this.cart);
             this.updateCartUI();
             this.showAddToCartNotification(item);
             
         } catch (error) {
             console.error('❌ Error adding to cart:', error);
-            alert('Failed to add item to cart. Please try again.');
+            
+            // Show user-friendly error message
+            if (error.message.includes('connect to backend')) {
+                alert('Cannot connect to server. Please make sure the backend is running and try again.');
+            } else if (error.message.includes('Invalid token')) {
+                alert('Your session has expired. Please login again.');
+                authManagerClean.logout();
+            } else {
+                alert('Failed to add item to cart. Please try again.');
+            }
         }
     }
 
@@ -141,11 +168,45 @@ class CartManagerClean {
     }
 
     getTotal() {
-        return this.cart.total || 0;
+        if (!this.cart) return 0;
+        
+        // Try different ways to get the total
+        if (this.cart.total !== undefined) {
+            return this.cart.total;
+        }
+        
+        // Calculate from items
+        let items = [];
+        if (this.cart.items && Array.isArray(this.cart.items)) {
+            items = this.cart.items;
+        } else if (this.cart.data && this.cart.data.items && Array.isArray(this.cart.data.items)) {
+            items = this.cart.data.items;
+        } else if (Array.isArray(this.cart)) {
+            items = this.cart;
+        }
+        
+        return items.reduce((total, item) => total + (item.price * item.quantity), 0);
     }
 
     getItemCount() {
-        return this.cart.itemCount || 0;
+        if (!this.cart) return 0;
+        
+        // Try different ways to get the item count
+        if (this.cart.itemCount !== undefined) {
+            return this.cart.itemCount;
+        }
+        
+        // Calculate from items
+        let items = [];
+        if (this.cart.items && Array.isArray(this.cart.items)) {
+            items = this.cart.items;
+        } else if (this.cart.data && this.cart.data.items && Array.isArray(this.cart.data.items)) {
+            items = this.cart.data.items;
+        } else if (Array.isArray(this.cart)) {
+            items = this.cart;
+        }
+        
+        return items.reduce((count, item) => count + item.quantity, 0);
     }
 
     updateCartUI() {

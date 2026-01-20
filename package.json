@@ -1,5 +1,26 @@
 {
+  "name": "24x7-cafe-fullstack",
+  "version": "1.0.0",
+  "description": "24x7 Cafe Food Ordering System - Full Stack",
+  "main": "index.html",
+  "scripts": {
+    "build": "echo 'No build step required for static frontend'",
+    "dev": "netlify dev",
+    "start": "netlify dev"
+  },
   "dependencies": {
-    "mongodb": "^7.0.0"
-  }
+    "express": "^4.18.2",
+    "mongoose": "^8.0.0",
+    "cors": "^2.8.5",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@netlify/functions": "^2.4.0",
+    "netlify-cli": "^17.0.0"
+  },
+  "keywords": ["food", "ordering", "restaurant", "mongodb", "netlify"],
+  "author": "24x7 Cafe",
+  "license": "MIT"
 }

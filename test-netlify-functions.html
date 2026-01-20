@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Netlify Functions - 24x7 Cafe</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 12px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; white-space: pre-wrap; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Netlify Functions - 24x7 Cafe</h1>
+        
+        <div class="test-section">
+            <h3>1. Health Check</h3>
+            <button onclick="testHealth()">Test Health Function</button>
+            <div id="healthResult">Click to test</div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. Seed Menu</h3>
+            <button onclick="seedMenu()">Seed Menu Items</button>
+            <div id="seedResult">Click to seed database</div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Get Menu</h3>
+            <button onclick="getMenu()">Get Menu Items</button>
+            <div id="menuResult">Click to get menu</div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. User Signup</h3>
+            <button onclick="testSignup()">Test Signup</button>
+            <div id="signupResult">Click to test signup</div>
+        </div>
+
+        <div class="test-section">
+            <h3>5. User Login</h3>
+            <button onclick="testLogin()">Test Login</button>
+            <div id="loginResult">Signup first</div>
+        </div>
+
+        <div class="test-section">
+            <h3>6. Complete Order Flow</h3>
+            <button onclick="testOrderFlow()">Test Order Flow</button>
+            <div id="orderResult">Login first</div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8888/.netlify/functions'
+            : `${window.location.origin}/.netlify/functions`;
+        
+        let authToken = null;
+
+        async function testHealth() {
+            const resultDiv = document.getElementById('healthResult');
+            resultDiv.innerHTML = '⏳ Testing health...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `✅ Health check passed!<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                resultDiv.parentElement.className = 'test-section success';
+                
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Health check failed: ${error.message}`;
+                resultDiv.parentElement.className = 'test-section error';
+            }
+        }
+
+        async function seedMenu() {
+            const resultDiv = document.getElementById('seedResult');
+            resultDiv.innerHTML = '⏳ Seeding menu...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/seed-menu`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `✅ Menu seeded successfully!<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                resultDiv.parentElement.className = 'test-section success';
+                
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Menu seeding failed: ${error.message}`;
+                resultDiv.parentElement.className = 'test-section error';
+            }
+        }
+
+        async function getMenu() {
+            const resultDiv = document.getElementById('menuResult');
+            resultDiv.innerHTML = '⏳ Getting menu...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/menu`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `✅ Menu retrieved! Found ${data.data.length} items<pre>${JSON.stringify(data.data.slice(0, 3), null, 2)}...</pre>`;
+                resultDiv.parentElement.className = 'test-section success';
+                
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Menu retrieval failed: ${error.message}`;
+                resultDiv.parentElement.className = 'test-section error';
+            }
+        }
+
+        async function testSignup() {
+            const resultDiv = document.getElementById('signupResult');
+            resultDiv.innerHTML = '⏳ Testing signup...';
+            
+            try {
+                const userData = {
+                    firstName: 'Test',
+                    lastName: 'User',
+                    email: `test${Date.now()}@example.com`,
+                    phone: '9876543210',
+                    hostel: 'Test Hostel',
+                    roomNumber: '101',
+                    password: 'test123'
+                };
+
+                const response = await fetch(`${API_BASE}/auth-signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(userData)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    authToken = data.data.token;
+                    resultDiv.innerHTML = `✅ Signup successful!<br>User: ${data.data.user.fullName}<br>Token: ${authToken.substring(0, 20)}...`;
+                    resultDiv.parentElement.className = 'test-section success';
+                } else {
+                    throw new Error(data.message);
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Signup failed: ${error.message}`;
+                resultDiv.parentElement.className = 'test-section error';
+            }
+        }
+
+        async function testLogin() {
+            const resultDiv = document.getElementById('loginResult');
+            resultDiv.innerHTML = '⏳ Testing login...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth-login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'test@example.com',
+                        password: 'test123'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    authToken = data.data.token;
+                    resultDiv.innerHTML = `✅ Login successful!<br>User: ${data.data.user.fullName}`;
+                    resultDiv.parentElement.className = 'test-section success';
+                } else {
+                    throw new Error(data.message);
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Login failed: ${error.message}`;
+                resultDiv.parentElement.className = 'test-section error';
+            }
+        }
+
+        async function testOrderFlow() {
+            const resultDiv = document.getElementById('orderResult');
+            
+            if (!authToken) {
+                resultDiv.innerHTML = '❌ Please login first';
+                return;
+            }
+            
+            resultDiv.innerHTML = '⏳ Testing order flow...';
+            
+            try {
+                // 1. Add to cart
+                const cartItem = {
+                    menuItemId: '507f1f77bcf86cd799439011', // Dummy ObjectId
+                    name: 'Test Noodles',
+                    price: 121,
+                    quantity: 1,
+                    instructions: 'Test order'
+                };
+
+                const cartResponse = await fetch(`${API_BASE}/cart`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(cartItem)
+                });
+
+                // 2. Create order
+                const orderData = {
+                    items: [cartItem],
+                    delivery: {
+                        hostel: 'Test Hostel',
+                        roomNumber: '101',
+                        instructions: 'Test delivery'
+                    },
+                    contact: {
+                        name: 'Test User',
+                        phone: '9876543210'
+                    },
+                    payment: {
+                        method: 'cod',
+                        transactionId: null
+                    },
+                    pricing: {
+                        subtotal: 121,
+                        deliveryFee: 10,
+                        tax: 6,
+                        total: 137
+                    }
+                };
+
+                const orderResponse = await fetch(`${API_BASE}/orders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(orderData)
+                });
+
+                const orderResult = await orderResponse.json();
+
+                if (orderResult.success) {
+                    resultDiv.innerHTML = `✅ Order flow completed!<br>Order ID: ${orderResult.data.orderId}<br>Status: ${orderResult.data.status}`;
+                    resultDiv.parentElement.className = 'test-section success';
+                } else {
+                    throw new Error(orderResult.message);
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Order flow failed: ${error.message}`;
+                resultDiv.parentElement.className = 'test-section error';
+            }
+        }
+    </script>
+</body>
+</html>

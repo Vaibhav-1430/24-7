@@ -1,0 +1,93 @@
+[
+  {
+    "id": "1768848795048",
+    "firstName": "vaibhav",
+    "lastName": "yadavv",
+    "email": "y123@gmail.com",
+    "phone": "6387951651",
+    "hostel": "Girls Hostel 2",
+    "roomNumber": "203",
+    "password": "$2a$10$6pqXzBrkHDHNSeXOTQKDnuohQCl3dSgZB3M9WgpAfyS6FzF3L2S1q",
+    "isActive": true,
+    "isAdmin": false,
+    "createdAt": "2026-01-19T18:53:15.048Z"
+  },
+  {
+    "id": "1768848847947",
+    "firstName": "Test",
+    "lastName": "User",
+    "email": "test1768848847773@example.com",
+    "phone": "+91 98765 43210",
+    "hostel": "Test Hostel",
+    "roomNumber": "101",
+    "password": "$2a$10$tzm4lyrt7dSs7bnfianD3.YqcO35zu7FH8OS.XFEIQ/2nJqq1BWpS",
+    "isActive": true,
+    "isAdmin": false,
+    "createdAt": "2026-01-19T18:54:07.947Z"
+  },
+  {
+    "id": "1768849334413",
+    "firstName": "Test",
+    "lastName": "User",
+    "email": "test1768849334258@example.com",
+    "phone": "+91 98765 43210",
+    "hostel": "Test Hostel",
+    "roomNumber": "101",
+    "password": "$2a$10$4TyKVvu8WDeaUZVzo1cYPeNGI.GIGnq.3aYFELF3KPCZURB/FnNXe",
+    "isActive": true,
+    "isAdmin": false,
+    "createdAt": "2026-01-19T19:02:14.413Z"
+  },
+  {
+    "id": "1768852769350",
+    "firstName": "Debug",
+    "lastName": "User",
+    "email": "debug@test.com",
+    "phone": "9876543210",
+    "hostel": "Test Hostel",
+    "roomNumber": "101",
+    "password": "$2a$10$munPaqOGnSD5b8hvvh5W5uM1DLp9ElfTVQlP8D3iKX/ZITiwWf8w.",
+    "isActive": true,
+    "isAdmin": false,
+    "createdAt": "2026-01-19T19:59:29.350Z"
+  },
+  {
+    "id": "1768853216029",
+    "firstName": "Test",
+    "lastName": "User",
+    "email": "test1768853215865@example.com",
+    "phone": "9876543210",
+    "hostel": "Test Hostel",
+    "roomNumber": "101",
+    "password": "$2a$10$DWPDfZ4ZqH8S6YNTe/PCluFet2HprvC9ndLqlJ5FS9bknsn73vOym",
+    "isActive": true,
+    "isAdmin": false,
+    "createdAt": "2026-01-19T20:06:56.029Z"
+  },
+  {
+    "id": "1768853372265",
+    "firstName": "Test",
+    "lastName": "User",
+    "email": "test1768853372108@example.com",
+    "phone": "9876543210",
+    "hostel": "Test Hostel",
+    "roomNumber": "101",
+    "password": "$2a$10$CiFjxv1kBult3v6TXkcNlu6c0iNxV7YWkfkq0ME8rEFjVY/qd/RCy",
+    "isActive": true,
+    "isAdmin": false,
+    "createdAt": "2026-01-19T20:09:32.265Z"
+  },
+  {
+    "id": "1768853784427",
+    "firstName": "Test",
+    "lastName": "User",
+    "email": "test1768853784270@example.com",
+    "phone": "9876543210",
+    "hostel": "Test Hostel",
+    "roomNumber": "101",
+    "password": "$2a$10$wpfy7yEqZa0B0S3Wbli60u1iZfYfrhShRh7gYzfiEvJ/ArrSIYZJK",
+    "isActive": true,
+    "isAdmin": false,
+    "createdAt": "2026-01-19T20:16:24.427Z"
+  }
+]

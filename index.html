@@ -131,37 +131,13 @@
         </div>
     </footer>
 
-    <!-- Firebase CDN - Version 8 (Compat) -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
+    <!-- Configuration -->
+    <script src="js/config.js"></script>
     
-    <!-- Firebase Configuration -->
-    <script>
-        // Firebase config
-        const firebaseConfig = {
-            apiKey: "AIzaSyCNN5gijXy7DEi9YeY4shCYvu6ktMbkIDM",
-            authDomain: "cafe-24-7-bfb39.firebaseapp.com",
-            projectId: "cafe-24-7-bfb39",
-            storageBucket: "cafe-24-7-bfb39.firebasestorage.app",
-            messagingSenderId: "164822694308",
-            appId: "1:164822694308:web:79c41a8fa157ed4906e931",
-            measurementId: "G-QHW0PYZXEX"
-        };
-
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        console.log('🔥 Firebase initialized for home page');
-    </script>
-    
-    <!-- Menu Data -->
+    <!-- Clean MongoDB Backend Scripts -->
+    <script src="js/api-client.js"></script>
+    <script src="js/auth-manager-clean.js"></script>
+    <script src="js/cart-manager-clean.js"></script>
     <script src="js/app.js"></script>
-    
-    <!-- Auth Status Manager -->
-    <script src="js/auth-status.js"></script>
-    
-    <!-- Fixed Cart Manager -->
-    <script src="js/cart-manager-fixed.js"></script>
 </body>
 </html>

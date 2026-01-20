@@ -1,250 +1,11 @@
 // Global App Configuration
 const APP_CONFIG = {
-    apiUrl: 'https://your-firebase-project.firebaseio.com',
+    apiUrl: 'http://localhost:5000/api',
     currency: '₹'
 };
 
-// Firebase Cart Management
-class FirebaseCartManager {
-    constructor() {
-        this.cart = [];
-        this.cartListener = null;
-        this.initCartListener();
-    }
-
-    async initCartListener() {
-        try {
-            // Wait for Firebase to be ready
-            console.log('🛒 Waiting for Firebase to initialize cart...');
-            await window.waitForFirebase();
-            console.log('🛒 Setting up cart listener');
-            this.setupCartListener();
-        } catch (error) {
-            console.error('❌ Failed to initialize cart:', error);
-        }
-    }
-
-    setupCartListener() {
-        // Listen for auth state changes to load user's cart
-        window.firebaseAuth.onAuthStateChanged(async (user) => {
-            if (user) {
-                console.log('🛒 Loading cart for user:', user.email);
-                // Load user's cart from Firestore
-                await this.loadUserCart(user.uid);
-                
-                // Listen for real-time cart updates
-                if (this.cartListener) {
-                    this.cartListener(); // Unsubscribe previous listener
-                }
-                
-                this.cartListener = window.firebaseDB.collection('carts').doc(user.uid)
-                    .onSnapshot((doc) => {
-                        if (doc.exists) {
-                            const cartData = doc.data();
-                            this.cart = cartData.items || [];
-                            console.log('🛒 Cart updated from Firebase:', this.cart.length, 'items');
-                            this.updateCartUI();
-                        }
-                    }, (error) => {
-                        console.error('❌ Cart listener error:', error);
-                        if (error.code === 'permission-denied') {
-                            console.error('🔍 Cart permission denied. Check security rules in FIRESTORE-RULES-FIX.md');
-                        }
-                    });
-            } else {
-                // User logged out, clear cart
-                console.log('🛒 User logged out, clearing cart');
-                this.cart = [];
-                this.updateCartUI();
-                
-                // Unsubscribe from cart listener
-                if (this.cartListener) {
-                    this.cartListener();
-                    this.cartListener = null;
-                }
-            }
-        });
-    }
-
-    async loadUserCart(userId) {
-        try {
-            const cartDoc = await window.firebaseDB.collection('carts').doc(userId).get();
-            if (cartDoc.exists) {
-                this.cart = cartDoc.data().items || [];
-                console.log('✅ Cart loaded:', this.cart.length, 'items');
-            } else {
-                this.cart = [];
-                console.log('📝 No existing cart found, starting fresh');
-            }
-            this.updateCartUI();
-        } catch (error) {
-            console.error('❌ Error loading cart:', error);
-            if (error.code === 'permission-denied') {
-                console.error('🔍 Cart permission denied. Check security rules in FIRESTORE-RULES-FIX.md');
-            }
-            this.cart = [];
-        }
-    }
-
-    async saveCart() {
-        if (!window.firebaseAuth || !window.firebaseAuth.currentUser) {
-            console.log('⚠️ No user logged in, cannot save cart');
-            return;
-        }
-
-        try {
-            await window.firebaseDB.collection('carts').doc(window.firebaseAuth.currentUser.uid).set({
-                items: this.cart,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            console.log('✅ Cart saved to Firebase');
-        } catch (error) {
-            console.error('❌ Error saving cart:', error);
-            if (error.code === 'permission-denied') {
-                console.error('🔍 Cart save permission denied. Check security rules in FIRESTORE-RULES-FIX.md');
-            }
-        }
-    }
-
-    async addItem(item) {
-        const existingItem = this.cart.find(cartItem => 
-            cartItem.id === item.id && 
-            cartItem.instructions === item.instructions &&
-            cartItem.name === item.name // Include name to handle full/half variations
-        );
-
-        if (existingItem) {
-            existingItem.quantity += item.quantity;
-        } else {
-            this.cart.push({
-                ...item,
-                addedAt: new Date().toISOString()
-            });
-        }
-
-        await this.saveCart();
-        this.showAddToCartNotification(item);
-    }
-
-    async removeItem(itemId, instructions = '', itemName = '') {
-        this.cart = this.cart.filter(item => 
-            !(item.id === itemId && 
-              item.instructions === instructions &&
-              (itemName === '' || item.name === itemName))
-        );
-        await this.saveCart();
-    }
-
-    async updateQuantity(itemId, instructions, newQuantity, itemName = '') {
-        const item = this.cart.find(cartItem => 
-            cartItem.id === itemId && 
-            cartItem.instructions === instructions &&
-            (itemName === '' || cartItem.name === itemName)
-        );
-        
-        if (item) {
-            if (newQuantity <= 0) {
-                await this.removeItem(itemId, instructions, itemName);
-            } else {
-                item.quantity = newQuantity;
-                await this.saveCart();
-            }
-        }
-    }
-
-    getTotal() {
-        return this.cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-    }
-
-    getItemCount() {
-        return this.cart.reduce((count, item) => count + item.quantity, 0);
-    }
-
-    async clearCart() {
-        this.cart = [];
-        await this.saveCart();
-    }
-
-    updateCartUI() {
-        const cartCounts = document.querySelectorAll('.cart-count');
-        const itemCount = this.getItemCount();
-        
-        cartCounts.forEach(element => {
-            element.textContent = itemCount;
-            element.style.display = itemCount > 0 ? 'block' : 'none';
-        });
-
-        // Update cart summary if on menu page
-        const cartSummary = document.getElementById('cartSummary');
-        if (cartSummary) {
-            if (itemCount > 0) {
-                cartSummary.style.display = 'block';
-                const itemsCountEl = cartSummary.querySelector('.cart-items-count');
-                const totalEl = cartSummary.querySelector('.cart-total');
-                
-                if (itemsCountEl) itemsCountEl.textContent = `${itemCount} item${itemCount > 1 ? 's' : ''}`;
-                if (totalEl) totalEl.textContent = `${APP_CONFIG.currency}${this.getTotal()}`;
-            } else {
-                cartSummary.style.display = 'none';
-            }
-        }
-    }
-
-    showAddToCartNotification(item) {
-        // Create notification element
-        const notification = document.createElement('div');
-        notification.className = 'cart-notification';
-        notification.innerHTML = `
-            <i class="fas fa-check-circle"></i>
-            <span>${item.name} added to cart!</span>
-        `;
-
-        // Add styles
-        Object.assign(notification.style, {
-            position: 'fixed',
-            top: '100px',
-            right: '20px',
-            background: '#27ae60',
-            color: 'white',
-            padding: '15px 20px',
-            borderRadius: '10px',
-            boxShadow: '0 5px 15px rgba(0,0,0,0.2)',
-            zIndex: '2000',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            animation: 'slideInRight 0.3s ease, fadeOut 0.3s ease 2.7s forwards'
-        });
-
-        // Add animation keyframes
-        if (!document.getElementById('notification-styles')) {
-            const style = document.createElement('style');
-            style.id = 'notification-styles';
-            style.textContent = `
-                @keyframes slideInRight {
-                    from { transform: translateX(100%); opacity: 0; }
-                    to { transform: translateX(0); opacity: 1; }
-                }
-                @keyframes fadeOut {
-                    to { opacity: 0; transform: translateX(100%); }
-                }
-            `;
-            document.head.appendChild(style);
-        }
-
-        document.body.appendChild(notification);
-
-        // Remove notification after 3 seconds
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
-        }, 3000);
-    }
-}
-
-// Initialize Firebase cart manager
-const cartManager = new FirebaseCartManager();
+// Use the clean cart manager from cart-manager-clean.js
+// (cartManagerClean is already initialized in that file)
 
 // Navigation Menu Toggle
 document.addEventListener('DOMContentLoaded', function() {
@@ -997,7 +758,7 @@ function quickAddToCart(itemId) {
             showQuickAddModal(item);
         } else {
             // Direct add for items without half option
-            cartManager.addItem({
+            cartManagerClean.addItem({
                 id: item.id,
                 name: item.name,
                 price: item.price,
@@ -1054,7 +815,7 @@ function confirmQuickAdd(itemId) {
         const price = isHalf ? item.halfPrice : item.price;
         const sizeName = isHalf ? ' (Half)' : ' (Full)';
         
-        cartManager.addItem({
+        cartManagerClean.addItem({
             id: item.id,
             name: item.name + sizeName,
             price: price,
@@ -1074,198 +835,18 @@ function closeQuickAddModal() {
     }
 }
 
-// Firebase Authentication Manager
-class FirebaseAuthManager {
-    constructor() {
-        this.currentUser = null;
-        this.initAuthListener();
-    }
-
-    async initAuthListener() {
-        try {
-            // Wait for Firebase to be ready
-            console.log('⏳ Waiting for Firebase to initialize...');
-            await window.waitForFirebase();
-            console.log('✅ Firebase ready, setting up auth listener');
-            this.setupAuthListener();
-        } catch (error) {
-            console.error('❌ Failed to initialize Firebase auth:', error);
-        }
-    }
-
-    setupAuthListener() {
-        // Listen for authentication state changes
-        window.firebaseAuth.onAuthStateChanged(async (user) => {
-            console.log('🔄 Auth state changed:', user ? user.email : 'No user');
-            
-            if (user) {
-                // User is signed in
-                try {
-                    const userDoc = await window.firebaseDB.collection('users').doc(user.uid).get();
-                    this.currentUser = {
-                        id: user.uid,
-                        email: user.email,
-                        emailVerified: user.emailVerified,
-                        ...userDoc.data()
-                    };
-                    console.log('✅ User data loaded:', this.currentUser.email);
-                } catch (error) {
-                    console.error('⚠️ Error fetching user data:', error);
-                    console.error('🔍 This might be a Firestore security rules issue');
-                    this.currentUser = {
-                        id: user.uid,
-                        email: user.email,
-                        emailVerified: user.emailVerified
-                    };
-                }
-            } else {
-                // User is signed out
-                this.currentUser = null;
-                console.log('👋 User logged out');
-            }
-            this.updateAuthUI();
-        });
-    }
-
-    async signup(userData) {
-        try {
-            // Wait for Firebase to be ready
-            await window.waitForFirebase();
-
-            const { email, password, firstName, lastName, phone, hostel, roomNumber } = userData;
-            
-            console.log('📝 Creating user account for:', email);
-            
-            // Create user account
-            const userCredential = await window.firebaseAuth.createUserWithEmailAndPassword(email, password);
-            const user = userCredential.user;
-
-            console.log('✅ User account created, saving profile data...');
-
-            // Save additional user data to Firestore
-            await window.firebaseDB.collection('users').doc(user.uid).set({
-                firstName: firstName,
-                lastName: lastName,
-                name: `${firstName} ${lastName}`,
-                email: email,
-                phone: phone,
-                hostel: hostel,
-                roomNumber: roomNumber,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                isActive: true
-            });
-
-            console.log('✅ User profile saved successfully');
-            return user;
-        } catch (error) {
-            console.error('❌ Signup error:', error);
-            if (error.code === 'permission-denied') {
-                console.error('🔍 Firestore permission denied. Check security rules in FIRESTORE-RULES-FIX.md');
-            }
-            throw error;
-        }
-    }
-
-    async login(email, password) {
-        try {
-            // Wait for Firebase to be ready
-            await window.waitForFirebase();
-
-            console.log('🔐 Logging in user:', email);
-            const userCredential = await window.firebaseAuth.signInWithEmailAndPassword(email, password);
-            console.log('✅ User logged in successfully');
-            return userCredential.user;
-        } catch (error) {
-            console.error('❌ Login error:', error);
-            throw error;
-        }
-    }
-
-    async logout() {
-        try {
-            // Wait for Firebase to be ready
-            await window.waitForFirebase();
-
-            await window.firebaseAuth.signOut();
-            console.log('✅ User logged out successfully');
-        } catch (error) {
-            console.error('❌ Logout error:', error);
-            throw error;
-        }
-    }
-
-    isLoggedIn() {
-        return this.currentUser !== null;
-    }
-
-    updateAuthUI() {
-        const loginBtns = document.querySelectorAll('.login-btn');
-        loginBtns.forEach(btn => {
-            if (this.currentUser) {
-                btn.textContent = 'Logout';
-                btn.onclick = () => this.logout();
-            } else {
-                btn.textContent = 'Login';
-                btn.onclick = null;
-                btn.href = 'login.html';
-            }
-        });
-
-        // Update user-specific UI elements
-        const userNameElements = document.querySelectorAll('.user-name');
-        userNameElements.forEach(el => {
-            if (this.currentUser) {
-                el.textContent = this.currentUser.name || this.currentUser.email;
-            }
-        });
-    }
-
-    // Demo login for testing
-    async demoLogin() {
-        try {
-            // Create or login with demo account
-            const demoEmail = 'demo@24x7cafe.com';
-            const demoPassword = 'demo123456';
-            
-            console.log('🧪 Attempting demo login...');
-            
-            try {
-                // Try to login first
-                await this.login(demoEmail, demoPassword);
-            } catch (error) {
-                if (error.code === 'auth/user-not-found') {
-                    console.log('👤 Demo user not found, creating...');
-                    // Create demo account if it doesn't exist
-                    await this.signup({
-                        email: demoEmail,
-                        password: demoPassword,
-                        firstName: 'Demo',
-                        lastName: 'Student',
-                        phone: '+91 98765 43210',
-                        hostel: 'Hostel A',
-                        roomNumber: '101'
-                    });
-                } else {
-                    throw error;
-                }
-            }
-        } catch (error) {
-            console.error('❌ Demo login error:', error);
-            throw error;
-        }
-    }
-}
-
-// Initialize Firebase auth manager
-const authManager = new FirebaseAuthManager();
+// Use the clean auth manager from auth-manager-clean.js
+// (authManagerClean is already initialized in that file)
 
 // Initialize page-specific functionality
 document.addEventListener('DOMContentLoaded', function() {
     // Load popular items on home page
     loadPopularItems();
     
-    // Update cart UI
-    cartManager.updateCartUI();
+    // Update cart UI (use the clean cart manager)
+    if (window.cartManagerClean) {
+        cartManagerClean.updateCartUI();
+    }
 });
 
 // Utility Functions
@@ -1281,9 +862,9 @@ function showSuccess(message) {
     alert(message); // In production, use a proper toast/notification system
 }
 
-// Export for use in other files
-window.cartManager = cartManager;
-window.authManager = authManager;
+// Export for use in other files (use clean managers)
+window.cartManager = window.cartManagerClean;
+window.authManager = window.authManagerClean;
 window.SAMPLE_MENU_ITEMS = SAMPLE_MENU_ITEMS;
 window.APP_CONFIG = APP_CONFIG;
 window.quickAddToCart = quickAddToCart;

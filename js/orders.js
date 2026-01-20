@@ -1,16 +1,32 @@
 // Orders Page Functionality
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('📋 Orders page loading...');
+    
+    // Wait for managers to be ready
+    setTimeout(initializeOrdersPage, 1000);
+});
+
+function initializeOrdersPage() {
+    console.log('📋 Initializing orders page...');
+    
+    // Check if managers are ready
+    if (!window.authManagerClean || !window.apiClient) {
+        console.log('⏳ Managers not ready, retrying...');
+        setTimeout(initializeOrdersPage, 500);
+        return;
+    }
+    
     // Check if user is logged in
-    if (!authManager.isLoggedIn()) {
+    if (!authManagerClean.isLoggedIn()) {
         showLoginRequired();
         return;
     }
 
     // Initialize orders page
-    initializeOrdersPage();
+    showOrdersPage();
     setupEventListeners();
     loadUserOrders();
-});
+}
 
 function showLoginRequired() {
     document.getElementById('loginRequired').style.display = 'flex';
@@ -19,7 +35,7 @@ function showLoginRequired() {
     document.getElementById('noOrders').style.display = 'none';
 }
 
-function initializeOrdersPage() {
+function showOrdersPage() {
     document.getElementById('loginRequired').style.display = 'none';
     document.getElementById('orderFilters').style.display = 'flex';
     document.getElementById('ordersList').style.display = 'block';
@@ -39,15 +55,24 @@ function setupEventListeners() {
     });
 }
 
-function loadUserOrders() {
-    // Wait for Firebase to be ready
-    if (!window.firebaseAuth || !window.firebaseDB) {
-        console.log('⏳ Waiting for Firebase to load...');
-        setTimeout(loadUserOrders, 1000);
-        return;
+async function loadUserOrders() {
+    try {
+        console.log('📋 Loading user orders...');
+        
+        // Get orders from API
+        const orders = await apiClient.getOrders();
+        
+        if (orders.length === 0) {
+            showNoOrders();
+        } else {
+            displayOrders(orders);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error loading orders:', error);
+        showNoOrders();
     }
-
-    if (!window.firebaseAuth.currentUser) {
+}
         showLoginRequired();
         return;
     }
@@ -426,3 +451,144 @@ window.addEventListener('click', function(e) {
 
 // Update cart count on page load
 cartManager.updateCartUI();
+
+function showNoOrders() {
+    document.getElementById('ordersList').innerHTML = '';
+    document.getElementById('noOrders').style.display = 'flex';
+}
+
+function displayOrders(orders) {
+    document.getElementById('noOrders').style.display = 'none';
+    
+    const ordersList = document.getElementById('ordersList');
+    ordersList.innerHTML = orders.map(order => `
+        <div class="order-card" data-status="${order.status}">
+            <div class="order-header">
+                <div class="order-id">Order #${order.orderId || order.id}</div>
+                <div class="order-status status-${order.status}">${formatOrderStatus(order.status)}</div>
+            </div>
+            <div class="order-details">
+                <div class="order-date">${formatDate(order.createdAt)}</div>
+                <div class="order-items">${order.items.length} item${order.items.length > 1 ? 's' : ''}</div>
+                <div class="order-total">₹${order.total}</div>
+            </div>
+            <div class="order-actions">
+                <button class="view-details-btn" onclick="showOrderDetails('${order.id}')">
+                    View Details
+                </button>
+                ${order.status === 'received' || order.status === 'preparing' ? 
+                    `<button class="cancel-order-btn" onclick="cancelOrder('${order.id}')">Cancel</button>` : 
+                    ''
+                }
+            </div>
+        </div>
+    `).join('');
+}
+
+function filterUserOrders(status) {
+    const orderCards = document.querySelectorAll('.order-card');
+    
+    orderCards.forEach(card => {
+        if (status === 'all' || card.dataset.status === status) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+function formatOrderStatus(status) {
+    const statusMap = {
+        'received': 'Order Received',
+        'preparing': 'Preparing',
+        'ready': 'Ready for Pickup',
+        'delivered': 'Delivered',
+        'cancelled': 'Cancelled'
+    };
+    return statusMap[status] || status;
+}
+
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+async function showOrderDetails(orderId) {
+    try {
+        const order = await apiClient.getOrder(orderId);
+        
+        const modalBody = document.getElementById('orderDetailsBody');
+        modalBody.innerHTML = `
+            <div class="order-info">
+                <h4>Order #${order.orderId || order.id}</h4>
+                <p><strong>Status:</strong> ${formatOrderStatus(order.status)}</p>
+                <p><strong>Date:</strong> ${formatDate(order.createdAt)}</p>
+                <p><strong>Delivery Address:</strong> ${order.deliveryAddress}</p>
+            </div>
+            
+            <div class="order-items-list">
+                <h4>Items Ordered:</h4>
+                ${order.items.map(item => `
+                    <div class="order-item">
+                        <div class="item-details">
+                            <span class="item-name">${item.name}</span>
+                            <span class="item-quantity">x${item.quantity}</span>
+                        </div>
+                        <div class="item-price">₹${item.price * item.quantity}</div>
+                        ${item.instructions ? `<div class="item-instructions">Note: ${item.instructions}</div>` : ''}
+                    </div>
+                `).join('')}
+            </div>
+            
+            <div class="order-summary">
+                <div class="summary-row">
+                    <span>Subtotal:</span>
+                    <span>₹${order.total}</span>
+                </div>
+                <div class="summary-row total">
+                    <span><strong>Total:</strong></span>
+                    <span><strong>₹${order.total}</strong></span>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('orderDetailsModal').style.display = 'block';
+        
+    } catch (error) {
+        console.error('❌ Error loading order details:', error);
+        alert('Failed to load order details. Please try again.');
+    }
+}
+
+function closeOrderDetailsModal() {
+    document.getElementById('orderDetailsModal').style.display = 'none';
+}
+
+async function cancelOrder(orderId) {
+    if (!confirm('Are you sure you want to cancel this order?')) {
+        return;
+    }
+    
+    try {
+        await apiClient.cancelOrder(orderId);
+        alert('Order cancelled successfully');
+        loadUserOrders(); // Reload orders
+    } catch (error) {
+        console.error('❌ Error cancelling order:', error);
+        alert('Failed to cancel order. Please try again.');
+    }
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('orderDetailsModal');
+    if (event.target === modal) {
+        closeOrderDetailsModal();
+    }
+}

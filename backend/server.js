@@ -6,20 +6,33 @@ require('dotenv').config();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: [
+        'http://localhost:3000', 
+        'http://127.0.0.1:5500', 
+        'http://localhost:5500',
+        'http://localhost:8080',
+        process.env.FRONTEND_URL || 'https://your-netlify-site.netlify.app'
+    ],
+    credentials: true
+}));
 app.use(express.json());
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI, {
-    serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
-    socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-})
-.then(() => {
-    console.log('✅ Connected to MongoDB Atlas');
-})
-.catch((error) => {
-    console.error('❌ MongoDB connection error:', error);
-});
+const connectDB = async () => {
+    try {
+        await mongoose.connect(process.env.MONGODB_URI, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
+        console.log('✅ Connected to MongoDB Atlas');
+    } catch (error) {
+        console.error('❌ MongoDB connection error:', error);
+        process.exit(1);
+    }
+};
+
+connectDB();
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -32,7 +45,8 @@ app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'OK', 
         message: '24x7 Cafe Backend is running!',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development'
     });
 });
 

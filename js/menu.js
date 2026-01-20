@@ -85,32 +85,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            cartManager.addItem({
-                id: currentItem.id,
-                name: currentItem.name + sizeName,
-                price: price,
-                quantity: quantity,
-                instructions: instructions
-            });
+            // Use the clean cart manager
+            if (window.cartManagerClean) {
+                cartManagerClean.addItem({
+                    id: currentItem.id,
+                    name: currentItem.name + sizeName,
+                    price: price,
+                    quantity: quantity,
+                    instructions: instructions
+                });
+            } else {
+                console.error('❌ Cart manager not available');
+                alert('Cart manager not ready. Please refresh the page and try again.');
+            }
             
             closeAddToCartModal();
         }
     });
 
     // Load and Display Menu Items
-    function loadMenuItems() {
+    async function loadMenuItems() {
         showLoading();
         
-        // Simulate API delay
-        setTimeout(() => {
-            let filteredItems = SAMPLE_MENU_ITEMS;
+        try {
+            // Load menu items from MongoDB backend
+            let filteredItems = await apiClient.getMenuItems(currentCategory === 'all' ? null : currentCategory);
             
-            // Filter by category
-            if (currentCategory !== 'all') {
-                filteredItems = filteredItems.filter(item => item.category === currentCategory);
-            }
-            
-            // Filter by search query
+            // Filter by search query if provided
             if (searchQuery) {
                 filteredItems = filteredItems.filter(item => 
                     item.name.toLowerCase().includes(searchQuery) ||
@@ -118,8 +119,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 );
             }
             
+            // Store menu items globally for cart functionality
+            window.SAMPLE_MENU_ITEMS = filteredItems;
+            
             displayMenuItems(filteredItems);
-        }, 300);
+        } catch (error) {
+            console.error('❌ Error loading menu items:', error);
+            hideLoading();
+            showNoResults();
+        }
     }
 
     function displayMenuItems(items) {
@@ -153,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             }
                         </div>
                         <button class="add-to-cart-btn" 
-                                onclick="openAddToCartModal(${item.id})" 
+                                onclick="openAddToCartModal('${item._id || item.id}')" 
                                 ${!item.available || item.onMRP ? 'disabled' : ''}>
                             ${!item.available ? 'Unavailable' : 
                               item.onMRP ? 'On MRP' : 'Add to Cart'}
@@ -201,7 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Modal Functions
     window.openAddToCartModal = function(itemId) {
-        const item = SAMPLE_MENU_ITEMS.find(item => item.id === itemId);
+        const item = window.SAMPLE_MENU_ITEMS?.find(item => item._id === itemId || item.id === itemId);
         if (!item || !item.available || item.onMRP) return;
         
         currentItem = item;

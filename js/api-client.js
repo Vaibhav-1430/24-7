@@ -1,7 +1,11 @@
-// Simple API Client for MongoDB Backend
+// API Client for Netlify Functions
 class APIClient {
     constructor() {
-        this.baseURL = 'http://localhost:5000/api';
+        // Use config if available, otherwise fallback to Netlify Functions
+        this.baseURL = window.CONFIG ? window.CONFIG.API_BASE_URL : 
+            (window.location.hostname === 'localhost' 
+                ? 'http://localhost:8888/.netlify/functions'
+                : `${window.location.origin}/.netlify/functions`);
         this.token = localStorage.getItem('authToken');
     }
 
@@ -10,6 +14,7 @@ class APIClient {
         const url = `${this.baseURL}${endpoint}`;
         
         const config = {
+            method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
                 ...options.headers
@@ -23,46 +28,62 @@ class APIClient {
         }
 
         try {
+            console.log(`🌐 API Request: ${config.method} ${url}`);
+            
             const response = await fetch(url, config);
-            const data = await response.json();
-
+            
             if (!response.ok) {
-                throw new Error(data.message || 'API request failed');
+                const errorText = await response.text();
+                let errorData;
+                try {
+                    errorData = JSON.parse(errorText);
+                } catch {
+                    errorData = { message: errorText || 'API request failed' };
+                }
+                throw new Error(errorData.message || `HTTP ${response.status}`);
             }
-
+            
+            const data = await response.json();
+            console.log(`✅ API Response: ${config.method} ${url}`, data);
             return data;
+            
         } catch (error) {
-            console.error('API Error:', error);
+            console.error(`❌ API Error: ${config.method} ${url}`, error);
+            
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                throw new Error('Cannot connect to backend. Make sure the server is running on http://localhost:5000');
+            }
+            
             throw error;
         }
     }
 
     // Authentication methods
     async signup(userData) {
-        const response = await this.request('/auth/signup', {
+        const response = await this.request('/auth-signup', {
             method: 'POST',
             body: JSON.stringify(userData)
         });
 
-        if (response.success && response.token) {
-            this.token = response.token;
+        if (response.success && response.data.token) {
+            this.token = response.data.token;
             localStorage.setItem('authToken', this.token);
-            localStorage.setItem('currentUser', JSON.stringify(response.user));
+            localStorage.setItem('currentUser', JSON.stringify(response.data.user));
         }
 
         return response;
     }
 
     async login(email, password) {
-        const response = await this.request('/auth/login', {
+        const response = await this.request('/auth-login', {
             method: 'POST',
             body: JSON.stringify({ email, password })
         });
 
-        if (response.success && response.token) {
-            this.token = response.token;
+        if (response.success && response.data.token) {
+            this.token = response.data.token;
             localStorage.setItem('authToken', this.token);
-            localStorage.setItem('currentUser', JSON.stringify(response.user));
+            localStorage.setItem('currentUser', JSON.stringify(response.data.user));
         }
 
         return response;
@@ -72,8 +93,8 @@ class APIClient {
         if (!this.token) return null;
 
         try {
-            const response = await this.request('/auth/me');
-            return response.success ? response.user : null;
+            const response = await this.request('/auth-me');
+            return response.success ? response.data.user : null;
         } catch (error) {
             // Token might be expired
             this.logout();
@@ -115,7 +136,7 @@ class APIClient {
     }
 
     async addToCart(item) {
-        const response = await this.request('/cart/add', {
+        const response = await this.request('/cart', {
             method: 'POST',
             body: JSON.stringify(item)
         });
