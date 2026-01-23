@@ -230,19 +230,18 @@ class APIClient {
                         ]
                     };
                     
-                case '/cart-get':
-                    return {
-                        success: true,
-                        message: 'Cart retrieved successfully',
-                        data: {
-                            items: [],
-                            total: 0,
-                            itemCount: 0
-                        }
-                    };
-                    
-                case '/cart-add':
-                    if (method === 'POST') {
+                case '/cart':
+                    if (method === 'GET') {
+                        return {
+                            success: true,
+                            message: 'Cart retrieved successfully',
+                            data: {
+                                items: [],
+                                total: 0,
+                                itemCount: 0
+                            }
+                        };
+                    } else if (method === 'POST') {
                         const cartItem = JSON.parse(options.body || '{}');
                         return {
                             success: true,
@@ -251,6 +250,16 @@ class APIClient {
                                 items: [cartItem],
                                 total: cartItem.price * cartItem.quantity,
                                 itemCount: cartItem.quantity
+                            }
+                        };
+                    } else if (method === 'DELETE') {
+                        return {
+                            success: true,
+                            message: 'Cart cleared successfully',
+                            data: {
+                                items: [],
+                                total: 0,
+                                itemCount: 0
                             }
                         };
                     }
@@ -348,12 +357,12 @@ class APIClient {
 
     // Cart methods
     async getCart() {
-        const response = await this.request('/cart-get');
+        const response = await this.request('/cart');
         return response.data;
     }
 
     async addToCart(item) {
-        const response = await this.request('/cart-add', {
+        const response = await this.request('/cart', {
             method: 'POST',
             body: JSON.stringify(item)
         });
@@ -361,22 +370,23 @@ class APIClient {
     }
 
     async updateCartItem(itemId, quantity) {
-        const response = await this.request(`/cart-update/${itemId}`, {
+        const response = await this.request('/cart', {
             method: 'PUT',
-            body: JSON.stringify({ quantity })
+            body: JSON.stringify({ itemId, quantity })
         });
         return response.data;
     }
 
     async removeFromCart(itemId) {
-        const response = await this.request(`/cart-remove/${itemId}`, {
-            method: 'DELETE'
+        const response = await this.request('/cart', {
+            method: 'PUT',
+            body: JSON.stringify({ itemId, quantity: 0 })
         });
         return response.data;
     }
 
     async clearCart() {
-        const response = await this.request('/cart-clear', {
+        const response = await this.request('/cart', {
             method: 'DELETE'
         });
         return response.data;
