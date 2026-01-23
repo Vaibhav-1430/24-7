@@ -92,7 +92,8 @@ class AuthManagerClean {
     }
 
     isLoggedIn() {
-        return this.currentUser !== null;
+        const token = localStorage.getItem('authToken');
+        return this.currentUser !== null && !!token;
     }
 
     updateAuthUI() {

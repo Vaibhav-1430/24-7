@@ -15,6 +15,9 @@ class APIClient {
 
     // Helper method to make API calls
     async request(endpoint, options = {}) {
+        // Refresh token from localStorage before each request
+        this.token = localStorage.getItem('authToken');
+        
         // Handle mock mode for local development
         if (this.mockMode) {
             return this.handleMockRequest(endpoint, options);
