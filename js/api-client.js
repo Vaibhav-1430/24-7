@@ -186,40 +186,46 @@ class APIClient {
                     }
                     throw new Error('Not authenticated');
                     
-                case '/menu-get':
+                case '/menu':
                     return {
                         success: true,
                         message: 'Menu items retrieved successfully',
                         data: [
                             {
                                 id: 1,
-                                name: "Masala Dosa",
-                                description: "Crispy rice crepe with spiced potato filling",
-                                price: 80,
-                                category: "South Indian",
-                                image: "images/masala-dosa.jpg",
+                                name: "Veg Noodles",
+                                description: "Delicious vegetable noodles with fresh vegetables and aromatic spices",
+                                price: 101,
+                                halfPrice: 66,
+                                category: "Noodles",
+                                image: "images/placeholder.jpg",
                                 available: true,
-                                popular: true
+                                popular: true,
+                                isVeg: true
                             },
                             {
                                 id: 2,
-                                name: "Chicken Biryani",
-                                description: "Fragrant basmati rice with tender chicken",
-                                price: 180,
-                                category: "Rice",
-                                image: "images/chicken-biryani.jpg",
+                                name: "Chicken Noodles",
+                                description: "Spicy chicken noodles with tender chicken pieces",
+                                price: 131,
+                                halfPrice: 76,
+                                category: "Noodles",
+                                image: "images/placeholder.jpg",
                                 available: true,
-                                popular: true
+                                popular: true,
+                                isVeg: false
                             },
                             {
                                 id: 3,
-                                name: "Paneer Butter Masala",
-                                description: "Soft paneer cubes in rich tomato-based creamy gravy",
-                                price: 140,
-                                category: "North Indian",
-                                image: "images/paneer-butter-masala.jpg",
+                                name: "Paneer Momos (Fried)",
+                                description: "Crispy fried momos stuffed with spiced paneer",
+                                price: 61,
+                                halfPrice: 41,
+                                category: "Momos",
+                                image: "images/placeholder.jpg",
                                 available: true,
-                                popular: false
+                                popular: true,
+                                isVeg: true
                             }
                         ]
                     };
@@ -325,7 +331,7 @@ class APIClient {
 
     // Menu methods
     async getMenuItems(category = null) {
-        const endpoint = category ? `/menu-get?category=${category}` : '/menu-get';
+        const endpoint = category ? `/menu?category=${category}` : '/menu';
         const response = await this.request(endpoint);
         return response.data || [];
     }

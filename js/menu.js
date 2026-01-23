@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let sizeName = '';
             
             // Check if half price option is selected
-            if (currentItem.hasHalf) {
+            if (currentItem.halfPrice) {
                 const selectedOption = document.querySelector('input[name="priceOption"]:checked');
                 if (selectedOption && selectedOption.value === 'half') {
                     price = currentItem.halfPrice;
@@ -154,17 +154,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="menu-item-description">${item.description}</div>
                     <div class="menu-item-footer">
                         <div class="menu-item-price">
-                            ${item.onMRP ? 'On MRP' : 
-                              item.hasHalf ? 
+                            ${item.halfPrice ? 
                                 `Full: ${APP_CONFIG.currency}${item.price} | Half: ${APP_CONFIG.currency}${item.halfPrice}` : 
                                 `${APP_CONFIG.currency}${item.price}`
                             }
                         </div>
                         <button class="add-to-cart-btn" 
                                 onclick="openAddToCartModal('${item._id || item.id}')" 
-                                ${!item.available || item.onMRP ? 'disabled' : ''}>
-                            ${!item.available ? 'Unavailable' : 
-                              item.onMRP ? 'On MRP' : 'Add to Cart'}
+                                ${!item.available ? 'disabled' : ''}>
+                            ${!item.available ? 'Unavailable' : 'Add to Cart'}
                         </button>
                     </div>
                 </div>
@@ -174,15 +172,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function getCategoryName(category) {
         const categoryNames = {
-            'noodles': 'Noodles',
-            'veg-manchurian-gravy': 'Veg Manchurian & Gravy',
-            'rolls': 'Rolls',
-            'momos': 'Momos',
-            'rice': 'Rice',
-            'extra': 'Extra',
-            'omlet-maggi': 'Om Let & Maggi',
-            'parathas': 'Parathas (With Pickle & Curds)',
-            'drinks-snacks': 'Drinks & Snacks'
+            'Noodles': 'Noodles',
+            'Manchurian & Gravy': 'Manchurian & Gravy',
+            'Momos': 'Momos',
+            'Rice': 'Rice',
+            'Rolls': 'Rolls',
+            'Omlet & Maggi': 'Omlet & Maggi',
+            'Parathas': 'Parathas',
+            'Extra': 'Extra',
+            'Drinks & Snacks': 'Drinks & Snacks'
         };
         return categoryNames[category] || category;
     }
@@ -210,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Modal Functions
     window.openAddToCartModal = function(itemId) {
         const item = window.SAMPLE_MENU_ITEMS?.find(item => item._id === itemId || item.id === itemId);
-        if (!item || !item.available || item.onMRP) return;
+        if (!item || !item.available) return;
         
         currentItem = item;
         
@@ -223,7 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('modalItemDescription').textContent = item.description;
         
         // Handle price display for full/half options
-        if (item.hasHalf) {
+        if (item.halfPrice) {
             document.getElementById('modalItemPrice').innerHTML = `
                 <div class="price-options">
                     <label class="price-option">
@@ -264,7 +262,7 @@ document.addEventListener('DOMContentLoaded', function() {
             let price = currentItem.price;
             
             // Check if half price option is selected
-            if (currentItem.hasHalf) {
+            if (currentItem.halfPrice) {
                 const selectedOption = document.querySelector('input[name="priceOption"]:checked');
                 if (selectedOption && selectedOption.value === 'half') {
                     price = currentItem.halfPrice;
