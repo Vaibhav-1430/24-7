@@ -11,7 +11,7 @@ const cartItemSchema = new mongoose.Schema({
 });
 
 const cartSchema = new mongoose.Schema({
-    userId: { type: String, required: true, unique: true },
+    user: { type: String, required: true, unique: true },
     items: [cartItemSchema],
     total: { type: Number, default: 0 },
     itemCount: { type: Number, default: 0 },
@@ -150,12 +150,12 @@ exports.handler = async (event, context) => {
 // Get user's cart
 async function getCart(userId, headers) {
     try {
-        let cart = await Cart.findOne({ userId });
+        let cart = await Cart.findOne({ user: userId });
         
         if (!cart) {
             // Create empty cart if doesn't exist
             cart = new Cart({
-                userId,
+                user: userId,
                 items: [],
                 total: 0,
                 itemCount: 0
@@ -202,10 +202,10 @@ async function addToCart(userId, itemData, headers) {
             };
         }
 
-        let cart = await Cart.findOne({ userId });
+        let cart = await Cart.findOne({ user: userId });
         
         if (!cart) {
-            cart = new Cart({ userId, items: [] });
+            cart = new Cart({ user: userId, items: [] });
         }
 
         // Check if item already exists in cart
@@ -274,7 +274,7 @@ async function updateCartItem(userId, updateData, headers) {
             };
         }
 
-        const cart = await Cart.findOne({ userId });
+        const cart = await Cart.findOne({ user: userId });
         
         if (!cart) {
             return {
@@ -333,7 +333,7 @@ async function updateCartItem(userId, updateData, headers) {
 // Clear cart
 async function clearCart(userId, headers) {
     try {
-        const cart = await Cart.findOne({ userId });
+        const cart = await Cart.findOne({ user: userId });
         
         if (!cart) {
             return {
