@@ -317,7 +317,7 @@ const COMPLETE_MENU = [
         name: "Boiled Egg",
         description: "Simple boiled eggs",
         category: "Omlet & Maggi",
-        fullPrice: null,
+        fullPrice: 21,
         halfPrice: null,
         isVeg: false
     },

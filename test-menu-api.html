@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .menu-item { border: 1px solid #ddd; margin: 10px 0; padding: 10px; }
+        .category { font-weight: bold; color: #333; }
+        .price { color: #e74c3c; font-weight: bold; }
+        .loading { text-align: center; padding: 20px; }
+    </style>
+</head>
+<body>
+    <h1>24x7 Cafe Menu API Test</h1>
+    <div id="loading" class="loading">Loading menu items...</div>
+    <div id="menu-container"></div>
+
+    <script>
+        async function loadMenu() {
+            try {
+                const response = await fetch('/.netlify/functions/menu');
+                const data = await response.json();
+                
+                document.getElementById('loading').style.display = 'none';
+                
+                if (data.success && data.data) {
+                    const container = document.getElementById('menu-container');
+                    
+                    // Group by category
+                    const categories = {};
+                    data.data.forEach(item => {
+                        if (!categories[item.category]) {
+                            categories[item.category] = [];
+                        }
+                        categories[item.category].push(item);
+                    });
+                    
+                    // Display by category
+                    Object.keys(categories).forEach(category => {
+                        const categoryDiv = document.createElement('div');
+                        categoryDiv.innerHTML = `<h2 class="category">${category}</h2>`;
+                        container.appendChild(categoryDiv);
+                        
+                        categories[category].forEach(item => {
+                            const itemDiv = document.createElement('div');
+                            itemDiv.className = 'menu-item';
+                            itemDiv.innerHTML = `
+                                <h3>${item.name}</h3>
+                                <p>${item.description}</p>
+                                <div class="price">
+                                    ${item.halfPrice ? 
+                                        `Full: ₹${item.price} | Half: ₹${item.halfPrice}` : 
+                                        `₹${item.price}`
+                                    }
+                                </div>
+                                <small>Available: ${item.available ? 'Yes' : 'No'} | Veg: ${item.isVeg ? 'Yes' : 'No'}</small>
+                            `;
+                            container.appendChild(itemDiv);
+                        });
+                    });
+                    
+                    // Add summary
+                    const summary = document.createElement('div');
+                    summary.innerHTML = `<h2>Summary</h2><p>Total items: ${data.data.length}</p><p>Categories: ${Object.keys(categories).length}</p>`;
+                    container.appendChild(summary);
+                    
+                } else {
+                    document.getElementById('menu-container').innerHTML = '<p>Error loading menu: ' + (data.message || 'Unknown error') + '</p>';
+                }
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('menu-container').innerHTML = '<p>Error: ' + error.message + '</p>';
+            }
+        }
+        
+        // Load menu when page loads
+        loadMenu();
+    </script>
+</body>
+</html>
