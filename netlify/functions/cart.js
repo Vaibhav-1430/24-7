@@ -16,7 +16,10 @@ const cartSchema = new mongoose.Schema({
     total: { type: Number, default: 0 },
     itemCount: { type: Number, default: 0 },
     updatedAt: { type: Date, default: Date.now }
-}, { timestamps: true });
+}, { 
+    timestamps: true,
+    collection: 'user_carts' // Use a different collection name to avoid conflicts
+});
 
 // Global connection cache
 let cachedConnection = null;
@@ -30,8 +33,12 @@ const connectDB = async () => {
     try {
         const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://cafe24x7:cafe24x7password@cluster0.4kxqj.mongodb.net/cafe24x7?retryWrites=true&w=majority';
         
+        // Completely disconnect and clear models if connection exists
         if (mongoose.connection.readyState !== 0) {
             await mongoose.disconnect();
+            // Clear all models
+            mongoose.models = {};
+            mongoose.modelSchemas = {};
         }
 
         const connection = await mongoose.connect(mongoUri, {
@@ -39,14 +46,8 @@ const connectDB = async () => {
             socketTimeoutMS: 30000
         });
 
-        // Create Cart model if it doesn't exist
-        if (!Cart) {
-            try {
-                Cart = mongoose.model('Cart');
-            } catch {
-                Cart = mongoose.model('Cart', cartSchema);
-            }
-        }
+        // Create Cart model with explicit collection name
+        Cart = mongoose.model('UserCart', cartSchema, 'user_carts');
 
         cachedConnection = connection;
         return connection;
