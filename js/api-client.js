@@ -261,7 +261,7 @@ class APIClient {
 
     // Authentication methods
     async signup(userData) {
-        // Use simple auth function temporarily
+        // Use simple auth function with real database
         const response = await this.request('/auth-signup-simple', {
             method: 'POST',
             body: JSON.stringify(userData)
@@ -277,7 +277,8 @@ class APIClient {
     }
 
     async login(email, password) {
-        const response = await this.request('/auth-login', {
+        // Use simple login function with real database
+        const response = await this.request('/auth-login-simple', {
             method: 'POST',
             body: JSON.stringify({ email, password })
         });

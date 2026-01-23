@@ -15,13 +15,6 @@ const userSchema = new mongoose.Schema({
     isAdmin: { type: Boolean, default: false }
 }, { timestamps: true });
 
-// Hash password before saving
-userSchema.pre('save', async function(next) {
-    if (!this.isModified('password')) return next();
-    this.password = await bcrypt.hash(this.password, 12);
-    next();
-});
-
 let User;
 try {
     User = mongoose.model('User');
@@ -38,7 +31,6 @@ const connectDB = async () => {
     }
 
     try {
-        // Working MongoDB Atlas connection
         const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://cafe24x7:cafe24x7password@cluster0.4kxqj.mongodb.net/cafe24x7?retryWrites=true&w=majority';
         
         const connection = await mongoose.connect(mongoUri, {
@@ -77,33 +69,22 @@ exports.handler = async (event, context) => {
     }
 
     try {
-        console.log('🚀 Starting signup process...');
+        console.log('🚀 Starting login process...');
         
         // Parse request body
         const requestBody = JSON.parse(event.body || '{}');
-        const { firstName, lastName, email, phone, hostel, roomNumber, password } = requestBody;
+        const { email, password } = requestBody;
 
-        console.log('📝 Signup request for:', email);
+        console.log('📝 Login request for:', email);
 
         // Validation
-        if (!firstName || !lastName || !email || !phone || !hostel || !roomNumber || !password) {
+        if (!email || !password) {
             return {
                 statusCode: 400,
                 headers,
                 body: JSON.stringify({
                     success: false,
-                    message: 'Please provide all required fields'
-                })
-            };
-        }
-
-        if (password.length < 6) {
-            return {
-                statusCode: 400,
-                headers,
-                body: JSON.stringify({
-                    success: false,
-                    message: 'Password must be at least 6 characters long'
+                    message: 'Please provide email and password'
                 })
             };
         }
@@ -113,63 +94,59 @@ exports.handler = async (event, context) => {
         await connectDB();
         console.log('✅ Database connected');
 
-        // Check if user exists
-        const existingUser = await User.findOne({ email: email.toLowerCase() });
-        if (existingUser) {
+        // Find user
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user) {
             return {
                 statusCode: 400,
                 headers,
                 body: JSON.stringify({
                     success: false,
-                    message: 'User with this email already exists'
+                    message: 'Invalid email or password'
                 })
             };
         }
 
-        // Create new user
-        console.log('🔧 Creating new user...');
-        const newUser = new User({
-            firstName: firstName.trim(),
-            lastName: lastName.trim(),
-            email: email.toLowerCase().trim(),
-            phone: phone.trim(),
-            hostel: hostel.trim(),
-            roomNumber: roomNumber.trim(),
-            password,
-            isActive: true,
-            isAdmin: false
-        });
-
-        const savedUser = await newUser.save();
-        console.log('✅ User created with ID:', savedUser._id);
+        // Check password
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return {
+                statusCode: 400,
+                headers,
+                body: JSON.stringify({
+                    success: false,
+                    message: 'Invalid email or password'
+                })
+            };
+        }
 
         // Generate JWT token
         const jwtSecret = process.env.JWT_SECRET || 'b0abcba6c167b5bedd1c212099fe54bbf0226afb36995bca3eae3bbcf0f3f999c88d6b76efc74bf452ba706806ee5e4758cc54241750b8e21719d96be2117fe4';
-        const token = jwt.sign({ userId: savedUser._id.toString() }, jwtSecret, { expiresIn: '7d' });
+        const token = jwt.sign({ userId: user._id.toString() }, jwtSecret, { expiresIn: '7d' });
 
         // Prepare user response (without password)
         const userResponse = {
-            id: savedUser._id,
-            firstName: savedUser.firstName,
-            lastName: savedUser.lastName,
-            email: savedUser.email,
-            phone: savedUser.phone,
-            hostel: savedUser.hostel,
-            roomNumber: savedUser.roomNumber,
-            isActive: savedUser.isActive,
-            isAdmin: savedUser.isAdmin,
-            fullName: `${savedUser.firstName} ${savedUser.lastName}`,
-            createdAt: savedUser.createdAt
+            id: user._id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            phone: user.phone,
+            hostel: user.hostel,
+            roomNumber: user.roomNumber,
+            isActive: user.isActive,
+            isAdmin: user.isAdmin,
+            fullName: `${user.firstName} ${user.lastName}`,
+            createdAt: user.createdAt
         };
 
-        console.log('✅ Signup successful for:', email);
+        console.log('✅ Login successful for:', email);
 
         return {
             statusCode: 200,
             headers,
             body: JSON.stringify({
                 success: true,
-                message: 'Account created successfully',
+                message: 'Login successful',
                 data: {
                     token,
                     user: userResponse
@@ -178,26 +155,14 @@ exports.handler = async (event, context) => {
         };
 
     } catch (error) {
-        console.error('❌ Signup error:', error);
-
-        // Handle specific errors
-        if (error.code === 11000) {
-            return {
-                statusCode: 400,
-                headers,
-                body: JSON.stringify({
-                    success: false,
-                    message: 'User with this email already exists'
-                })
-            };
-        }
+        console.error('❌ Login error:', error);
 
         return {
             statusCode: 500,
             headers,
             body: JSON.stringify({
                 success: false,
-                message: 'Server error during signup. Please try again.',
+                message: 'Server error during login. Please try again.',
                 error: process.env.NODE_ENV === 'development' ? error.message : undefined
             })
         };
