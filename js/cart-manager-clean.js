@@ -19,7 +19,7 @@ class CartManagerClean {
     }
 
     setupAuthListener() {
-        // Check auth state periodically
+        // Check auth state less frequently to prevent constant logouts
         setInterval(() => {
             if (authManagerClean.isLoggedIn() && !this.cart.items.length) {
                 this.loadCart();
@@ -27,7 +27,7 @@ class CartManagerClean {
                 this.cart = { items: [], total: 0, itemCount: 0 };
                 this.updateCartUI();
             }
-        }, 2000);
+        }, 10000); // Check every 10 seconds instead of 2 seconds
     }
 
     async loadCart() {

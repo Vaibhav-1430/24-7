@@ -49,6 +49,13 @@ class APIClient {
                 } catch {
                     errorData = { message: errorText || 'API request failed' };
                 }
+                
+                // Don't logout on server errors, only on authentication errors
+                if (response.status === 401 && endpoint !== '/me') {
+                    console.log('🔐 Authentication error, logging out');
+                    this.logout();
+                }
+                
                 throw new Error(errorData.message || `HTTP ${response.status}`);
             }
             
@@ -296,10 +303,11 @@ class APIClient {
         if (!this.token) return null;
 
         try {
-            const response = await this.request('/auth-me');
+            const response = await this.request('/me');
             return response.success ? response.data.user : null;
         } catch (error) {
-            // Token might be expired
+            // Token might be expired or invalid
+            console.log('⚠️ Token validation failed, logging out');
             this.logout();
             return null;
         }

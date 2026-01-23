@@ -13,16 +13,21 @@ class AuthManagerClean {
         if (token && savedUser) {
             try {
                 this.currentUser = JSON.parse(savedUser);
-                // Verify token is still valid
-                const user = await apiClient.getCurrentUser();
-                if (user) {
-                    this.currentUser = user;
-                    console.log('✅ User authenticated:', user.email);
-                } else {
-                    this.logout();
+                console.log('✅ User restored from localStorage:', this.currentUser.email);
+                
+                // Try to verify token, but don't logout immediately if it fails
+                try {
+                    const user = await apiClient.getCurrentUser();
+                    if (user) {
+                        this.currentUser = user;
+                        console.log('✅ Token validated, user updated:', user.email);
+                    }
+                } catch (error) {
+                    console.log('⚠️ Token validation failed, but keeping user logged in for now');
+                    // Don't logout immediately - let user continue with cached data
                 }
             } catch (error) {
-                console.log('⚠️ Token expired, logging out');
+                console.log('⚠️ Error parsing saved user data, logging out');
                 this.logout();
             }
         }
