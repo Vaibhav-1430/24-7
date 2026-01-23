@@ -95,15 +95,20 @@ class CartManagerClean {
             
         } catch (error) {
             console.error('❌ Error adding to cart:', error);
+            console.error('❌ Error details:', error.message);
+            console.error('❌ Error stack:', error.stack);
             
             // Show user-friendly error message
             if (error.message.includes('connect to backend')) {
                 alert('Cannot connect to server. Please make sure the backend is running and try again.');
-            } else if (error.message.includes('Invalid token')) {
+            } else if (error.message.includes('Invalid token') || error.message.includes('Authentication required')) {
                 alert('Your session has expired. Please login again.');
                 authManagerClean.logout();
+            } else if (error.message.includes('Missing required fields')) {
+                alert('Invalid item data. Please try again.');
+                console.error('❌ Item data that caused error:', cartItem);
             } else {
-                alert('Failed to add item to cart. Please try again.');
+                alert(`Failed to add item to cart. Error: ${error.message}`);
             }
         }
     }

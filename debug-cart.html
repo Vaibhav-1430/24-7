@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart Debug - 24x7 Cafe</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { border: 1px solid #ddd; margin: 10px 0; padding: 15px; }
+        .success { color: #27ae60; }
+        .error { color: #e74c3c; }
+        .warning { color: #f39c12; }
+        button { padding: 10px 15px; margin: 5px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #2980b9; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 12px; }
+        .log { margin: 5px 0; padding: 5px; background: #f8f9fa; border-left: 3px solid #3498db; }
+    </style>
+</head>
+<body>
+    <h1>Cart Debug Tool - 24x7 Cafe</h1>
+    
+    <div class="debug-section">
+        <h3>Step 1: Check Authentication</h3>
+        <div id="auth-status">Checking...</div>
+        <button onclick="checkAuth()">Refresh Auth Status</button>
+        <button onclick="testLogin()">Test Login</button>
+    </div>
+
+    <div class="debug-section">
+        <h3>Step 2: Test API Client</h3>
+        <div id="api-status">Not tested</div>
+        <button onclick="testAPIClient()">Test API Client</button>
+    </div>
+
+    <div class="debug-section">
+        <h3>Step 3: Test Cart Manager</h3>
+        <div id="cart-manager-status">Not tested</div>
+        <button onclick="testCartManager()">Test Cart Manager</button>
+    </div>
+
+    <div class="debug-section">
+        <h3>Step 4: Test Add to Cart Flow</h3>
+        <div id="add-cart-status">Not tested</div>
+        <button onclick="testAddToCart()">Test Add to Cart</button>
+    </div>
+
+    <div class="debug-section">
+        <h3>Debug Logs</h3>
+        <button onclick="clearLogs()">Clear Logs</button>
+        <div id="debug-logs"></div>
+    </div>
+
+    <!-- Load all the scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/api-client.js"></script>
+    <script src="js/auth-manager-clean.js"></script>
+    <script src="js/cart-manager-clean.js"></script>
+
+    <script>
+        let debugLogs = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            debugLogs.push({ message: logEntry, type });
+            updateDebugLogs();
+            console.log(logEntry);
+        }
+
+        function updateDebugLogs() {
+            const logsDiv = document.getElementById('debug-logs');
+            logsDiv.innerHTML = debugLogs.map(entry => 
+                `<div class="log ${entry.type}">${entry.message}</div>`
+            ).join('');
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function clearLogs() {
+            debugLogs = [];
+            updateDebugLogs();
+        }
+
+        // Check authentication status
+        function checkAuth() {
+            const authStatusDiv = document.getElementById('auth-status');
+            
+            try {
+                const token = localStorage.getItem('authToken');
+                const user = localStorage.getItem('currentUser');
+                
+                if (!token) {
+                    authStatusDiv.innerHTML = '<span class="error">❌ No auth token found</span>';
+                    log('No auth token in localStorage', 'error');
+                    return;
+                }
+                
+                if (!user) {
+                    authStatusDiv.innerHTML = '<span class="warning">⚠️ Token exists but no user data</span>';
+                    log('Auth token exists but no user data', 'warning');
+                    return;
+                }
+                
+                const userData = JSON.parse(user);
+                authStatusDiv.innerHTML = `<span class="success">✅ Logged in as: ${userData.email}</span>`;
+                log(`User authenticated: ${userData.email}`, 'success');
+                
+                // Check if authManagerClean is available
+                if (typeof authManagerClean !== 'undefined') {
+                    const isLoggedIn = authManagerClean.isLoggedIn();
+                    log(`AuthManager.isLoggedIn(): ${isLoggedIn}`, isLoggedIn ? 'success' : 'error');
+                } else {
+                    log('AuthManager not available', 'error');
+                }
+                
+            } catch (error) {
+                authStatusDiv.innerHTML = `<span class="error">❌ Error checking auth: ${error.message}</span>`;
+                log(`Auth check error: ${error.message}`, 'error');
+            }
+        }
+
+        // Test login
+        async function testLogin() {
+            log('Testing login...', 'info');
+            try {
+                const response = await apiClient.login('testcart@example.com', 'test123456');
+                if (response.success) {
+                    log('Login successful', 'success');
+                    checkAuth();
+                } else {
+                    log(`Login failed: ${response.message}`, 'error');
+                }
+            } catch (error) {
+                log(`Login error: ${error.message}`, 'error');
+            }
+        }
+
+        // Test API Client
+        async function testAPIClient() {
+            const statusDiv = document.getElementById('api-status');
+            log('Testing API Client...', 'info');
+            
+            try {
+                // Test if apiClient is available
+                if (typeof apiClient === 'undefined') {
+                    statusDiv.innerHTML = '<span class="error">❌ API Client not available</span>';
+                    log('API Client not defined', 'error');
+                    return;
+                }
+                
+                log(`API Client base URL: ${apiClient.baseURL}`, 'info');
+                log(`API Client token: ${apiClient.token ? 'Present' : 'Missing'}`, apiClient.token ? 'success' : 'warning');
+                
+                // Test cart API directly
+                const cartData = await apiClient.getCart();
+                statusDiv.innerHTML = '<span class="success">✅ API Client working</span>';
+                log(`Cart API response: ${JSON.stringify(cartData)}`, 'success');
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<span class="error">❌ API Client error: ${error.message}</span>`;
+                log(`API Client error: ${error.message}`, 'error');
+            }
+        }
+
+        // Test Cart Manager
+        async function testCartManager() {
+            const statusDiv = document.getElementById('cart-manager-status');
+            log('Testing Cart Manager...', 'info');
+            
+            try {
+                if (typeof cartManagerClean === 'undefined') {
+                    statusDiv.innerHTML = '<span class="error">❌ Cart Manager not available</span>';
+                    log('Cart Manager not defined', 'error');
+                    return;
+                }
+                
+                log('Cart Manager available', 'success');
+                log(`Current cart: ${JSON.stringify(cartManagerClean.cart)}`, 'info');
+                
+                statusDiv.innerHTML = '<span class="success">✅ Cart Manager available</span>';
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<span class="error">❌ Cart Manager error: ${error.message}</span>`;
+                log(`Cart Manager error: ${error.message}`, 'error');
+            }
+        }
+
+        // Test Add to Cart
+        async function testAddToCart() {
+            const statusDiv = document.getElementById('add-cart-status');
+            log('Testing Add to Cart flow...', 'info');
+            
+            try {
+                if (!authManagerClean.isLoggedIn()) {
+                    statusDiv.innerHTML = '<span class="error">❌ Not logged in</span>';
+                    log('User not logged in for cart test', 'error');
+                    return;
+                }
+                
+                const testItem = {
+                    id: 'test-debug-123',
+                    name: 'Debug Test Item',
+                    price: 50,
+                    quantity: 1,
+                    instructions: 'Test from debug tool'
+                };
+                
+                log(`Adding test item: ${JSON.stringify(testItem)}`, 'info');
+                
+                await cartManagerClean.addItem(testItem);
+                
+                statusDiv.innerHTML = '<span class="success">✅ Add to cart successful</span>';
+                log('Add to cart completed successfully', 'success');
+                
+            } catch (error) {
+                statusDiv.innerHTML = `<span class="error">❌ Add to cart failed: ${error.message}</span>`;
+                log(`Add to cart error: ${error.message}`, 'error');
+            }
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            log('Debug tool loaded', 'info');
+            checkAuth();
+        });
+
+        // Override console methods to capture logs
+        const originalConsoleLog = console.log;
+        const originalConsoleError = console.error;
+        const originalConsoleWarn = console.warn;
+
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            log(args.join(' '), 'info');
+        };
+
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            log(args.join(' '), 'error');
+        };
+
+        console.warn = function(...args) {
+            originalConsoleWarn.apply(console, args);
+            log(args.join(' '), 'warning');
+        };
+    </script>
+</body>
+</html>

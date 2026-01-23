@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Use the clean cart manager
             if (window.cartManagerClean) {
                 cartManagerClean.addItem({
-                    id: currentItem.id,
+                    id: currentItem._id || currentItem.id,
                     name: currentItem.name + sizeName,
                     price: price,
                     quantity: quantity,
