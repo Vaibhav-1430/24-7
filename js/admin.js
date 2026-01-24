@@ -1,33 +1,61 @@
 // Admin Dashboard Functionality
 document.addEventListener('DOMContentLoaded', function() {
-    // Check admin authentication (simplified for demo)
+    console.log('🔧 Admin dashboard loading...');
+    
+    // Wait for API client to be ready
+    setTimeout(initializeAdminDashboard, 1000);
+});
+
+function initializeAdminDashboard() {
+    console.log('🔧 Initializing admin dashboard...');
+    
+    // Check if API client is ready
+    if (!window.apiClient) {
+        console.log('⏳ API client not ready, retrying...');
+        setTimeout(initializeAdminDashboard, 500);
+        return;
+    }
+    
+    // Check admin authentication
     checkAdminAuth();
     
     // Initialize admin dashboard
-    initializeAdmin();
     setupEventListeners();
     loadDashboardData();
-});
+}
 
-function checkAdminAuth() {
-    // Check if user is logged in and has admin privileges
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
-    const token = localStorage.getItem('authToken');
-    
-    if (!currentUser || !token) {
-        alert('Please login first to access admin panel');
+async function checkAdminAuth() {
+    try {
+        // Check if user is logged in
+        if (!apiClient.isLoggedIn()) {
+            alert('Please login first to access admin panel');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        // Get current user and check admin privileges
+        const currentUser = await apiClient.getCurrentUser();
+        
+        if (!currentUser) {
+            alert('Please login first to access admin panel');
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        // Check if user has admin privileges
+        if (!currentUser.isAdmin) {
+            alert('Access denied. Admin privileges required.');
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        console.log('✅ Admin access granted for:', currentUser.email);
+        
+    } catch (error) {
+        console.error('❌ Admin auth check failed:', error);
+        alert('Authentication failed. Please login again.');
         window.location.href = 'login.html';
-        return;
     }
-    
-    // Check if user has admin privileges
-    if (!currentUser.isAdmin) {
-        alert('Access denied. Admin privileges required.');
-        window.location.href = 'index.html';
-        return;
-    }
-    
-    console.log('✅ Admin access granted for:', currentUser.email);
 }
 
 function setupEventListeners() {
@@ -80,7 +108,11 @@ function showSection(sectionName) {
                 loadOrders();
                 break;
             case 'menu':
-                loadMenuItems();
+                loadMenuItems().then(response => {
+                    if (response && response.menuItems) {
+                        currentMenuItems = response.menuItems;
+                    }
+                });
                 break;
             case 'analytics':
                 loadAnalytics();
@@ -89,36 +121,56 @@ function showSection(sectionName) {
     }
 }
 
-function initializeAdmin() {
-    // Initialize sample data if not exists
-    if (!localStorage.getItem('adminMenuItems')) {
-        localStorage.setItem('adminMenuItems', JSON.stringify(SAMPLE_MENU_ITEMS));
+// Update loadMenuItems to store current items
+async function loadMenuItems() {
+    try {
+        console.log('🍽️ Loading menu items...');
+        const response = await apiClient.getAdminMenuItems();
+        const menuItems = response.menuItems || [];
+        currentMenuItems = menuItems; // Store for editing
+        displayMenuItems(menuItems);
+        return response;
+    } catch (error) {
+        console.error('❌ Failed to load menu items:', error);
+        const menuItemsGrid = document.getElementById('menuItemsGrid');
+        menuItemsGrid.innerHTML = '<p style="color: #e74c3c; text-align: center; padding: 40px;">Failed to load menu items. Please try again.</p>';
+        return null;
     }
 }
 
-function loadDashboardData() {
-    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-    const menuItems = JSON.parse(localStorage.getItem('adminMenuItems') || '[]');
-    
-    // Calculate today's stats
-    const today = new Date().toDateString();
-    const todayOrders = orders.filter(order => 
-        new Date(order.orderTime).toDateString() === today
-    );
-    
-    const todayRevenue = todayOrders.reduce((sum, order) => sum + order.pricing.total, 0);
-    const pendingOrders = orders.filter(order => 
-        order.status === 'received' || order.status === 'preparing'
-    ).length;
-    
-    // Update stats
-    document.getElementById('todayOrders').textContent = todayOrders.length;
-    document.getElementById('todayRevenue').textContent = `₹${todayRevenue}`;
-    document.getElementById('pendingOrders').textContent = pendingOrders;
-    document.getElementById('menuItems').textContent = menuItems.length;
-    
-    // Load recent orders
-    loadRecentOrders(orders.slice(0, 5));
+async function loadDashboardData() {
+    try {
+        console.log('📊 Loading dashboard data...');
+        
+        // Load analytics data from API
+        const analyticsResponse = await apiClient.getAdminAnalytics(30);
+        const analytics = analyticsResponse.analytics;
+        
+        console.log('📊 Analytics data:', analytics);
+        
+        // Update dashboard stats
+        document.getElementById('todayOrders').textContent = analytics.dashboard.todayOrders;
+        document.getElementById('todayRevenue').textContent = `₹${analytics.dashboard.todayRevenue}`;
+        document.getElementById('pendingOrders').textContent = analytics.dashboard.pendingOrders;
+        document.getElementById('menuItems').textContent = analytics.dashboard.totalMenuItems;
+        
+        // Load recent orders
+        const ordersResponse = await apiClient.getAdminOrders();
+        const recentOrders = ordersResponse.orders.slice(0, 5);
+        loadRecentOrders(recentOrders);
+        
+    } catch (error) {
+        console.error('❌ Failed to load dashboard data:', error);
+        
+        // Fallback to show empty state
+        document.getElementById('todayOrders').textContent = '0';
+        document.getElementById('todayRevenue').textContent = '₹0';
+        document.getElementById('pendingOrders').textContent = '0';
+        document.getElementById('menuItems').textContent = '0';
+        
+        const recentOrdersContainer = document.getElementById('recentOrders');
+        recentOrdersContainer.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">Failed to load dashboard data</p>';
+    }
 }
 
 function loadRecentOrders(orders) {
@@ -132,18 +184,26 @@ function loadRecentOrders(orders) {
     recentOrdersContainer.innerHTML = orders.map(order => `
         <div class="recent-order">
             <div class="order-info">
-                <h4>Order #${order.id}</h4>
+                <h4>Order #${order.orderNumber || order.id}</h4>
                 <p>${order.contact.name} - ${order.delivery.hostel} ${order.delivery.roomNumber}</p>
-                <p>₹${order.pricing.total} - ${formatTime(order.orderTime)}</p>
+                <p>₹${order.pricing.total} - ${formatTime(order.createdAt || order.orderTime)}</p>
             </div>
             <div class="order-status status-${order.status}">${order.status}</div>
         </div>
     `).join('');
 }
 
-function loadOrders() {
-    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-    displayOrders(orders);
+async function loadOrders() {
+    try {
+        console.log('📋 Loading orders...');
+        const response = await apiClient.getAdminOrders();
+        const orders = response.orders || [];
+        displayOrders(orders);
+    } catch (error) {
+        console.error('❌ Failed to load orders:', error);
+        const ordersList = document.getElementById('ordersList');
+        ordersList.innerHTML = '<p style="color: #e74c3c; text-align: center; padding: 40px;">Failed to load orders. Please try again.</p>';
+    }
 }
 
 function displayOrders(orders) {
@@ -158,8 +218,8 @@ function displayOrders(orders) {
         <div class="order-card">
             <div class="order-header">
                 <div>
-                    <div class="order-id">Order #${order.id}</div>
-                    <div class="order-time">${formatDateTime(order.orderTime)}</div>
+                    <div class="order-id">Order #${order.orderNumber || order.id}</div>
+                    <div class="order-time">${formatDateTime(order.createdAt || order.orderTime)}</div>
                 </div>
                 <div class="order-status status-${order.status}">${order.status}</div>
             </div>
@@ -184,16 +244,20 @@ function displayOrders(orders) {
                     <p><strong>Address:</strong> ${order.delivery.hostel}, Room ${order.delivery.roomNumber}</p>
                     ${order.delivery.instructions ? `<p><strong>Instructions:</strong> ${order.delivery.instructions}</p>` : ''}
                     <p><strong>Payment:</strong> ${order.payment.method.toUpperCase()}</p>
+                    ${order.payment.transactionId ? `<p><strong>Transaction ID:</strong> ${order.payment.transactionId}</p>` : ''}
                 </div>
                 <div class="order-actions">
                     <h4>Update Status</h4>
-                    <select class="status-select" data-order-id="${order.id}">
+                    <select class="status-select" data-order-id="${order.orderNumber || order.id}">
                         <option value="received" ${order.status === 'received' ? 'selected' : ''}>Order Received</option>
                         <option value="preparing" ${order.status === 'preparing' ? 'selected' : ''}>Preparing</option>
                         <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>Ready for Delivery</option>
+                        <option value="out_for_delivery" ${order.status === 'out_for_delivery' ? 'selected' : ''}>Out for Delivery</option>
                         <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>Delivered</option>
+                        <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
                     </select>
-                    <button class="update-status-btn" onclick="updateOrderStatus('${order.id}')">
+                    <textarea class="admin-notes" placeholder="Add notes (optional)..." data-order-id="${order.orderNumber || order.id}"></textarea>
+                    <button class="update-status-btn" onclick="updateOrderStatus('${order.orderNumber || order.id}')">
                         Update Status
                     </button>
                 </div>
@@ -202,48 +266,86 @@ function displayOrders(orders) {
     `).join('');
 }
 
-function filterOrders(status) {
-    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-    const filteredOrders = status === 'all' ? orders : orders.filter(order => order.status === status);
-    displayOrders(filteredOrders);
-}
-
-function updateOrderStatus(orderId) {
-    const statusSelect = document.querySelector(`[data-order-id="${orderId}"]`);
-    const newStatus = statusSelect.value;
-    
-    // Update order in localStorage
-    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-    const orderIndex = orders.findIndex(order => order.id === orderId);
-    
-    if (orderIndex !== -1) {
-        orders[orderIndex].status = newStatus;
-        orders[orderIndex].updatedAt = new Date().toISOString();
-        localStorage.setItem('orders', JSON.stringify(orders));
-        
-        // Refresh orders display
-        loadOrders();
-        loadDashboardData();
-        
-        alert(`Order #${orderId} status updated to: ${newStatus}`);
+async function filterOrders(status) {
+    try {
+        console.log('🔍 Filtering orders by status:', status);
+        const response = await apiClient.getAdminOrders(status);
+        const orders = response.orders || [];
+        displayOrders(orders);
+    } catch (error) {
+        console.error('❌ Failed to filter orders:', error);
+        const ordersList = document.getElementById('ordersList');
+        ordersList.innerHTML = '<p style="color: #e74c3c; text-align: center; padding: 40px;">Failed to load orders. Please try again.</p>';
     }
 }
 
-function loadMenuItems() {
-    const menuItems = JSON.parse(localStorage.getItem('adminMenuItems') || '[]');
+async function updateOrderStatus(orderId) {
+    try {
+        const statusSelect = document.querySelector(`[data-order-id="${orderId}"]`);
+        const notesTextarea = document.querySelector(`.admin-notes[data-order-id="${orderId}"]`);
+        const newStatus = statusSelect.value;
+        const notes = notesTextarea ? notesTextarea.value.trim() : '';
+        
+        console.log('🔄 Updating order status:', orderId, newStatus, notes);
+        
+        // Show loading state
+        const updateBtn = statusSelect.parentNode.querySelector('.update-status-btn');
+        const originalText = updateBtn.textContent;
+        updateBtn.disabled = true;
+        updateBtn.textContent = 'Updating...';
+        
+        await apiClient.updateOrderStatus(orderId, newStatus, notes);
+        
+        // Refresh orders display
+        await loadOrders();
+        await loadDashboardData();
+        
+        alert(`Order #${orderId} status updated to: ${newStatus}`);
+        
+    } catch (error) {
+        console.error('❌ Failed to update order status:', error);
+        alert('Failed to update order status. Please try again.');
+        
+        // Reset button state
+        const updateBtn = document.querySelector(`[data-order-id="${orderId}"]`).parentNode.querySelector('.update-status-btn');
+        updateBtn.disabled = false;
+        updateBtn.textContent = 'Update Status';
+    }
+}
+
+async function loadMenuItems() {
+    try {
+        console.log('🍽️ Loading menu items...');
+        const response = await apiClient.getAdminMenuItems();
+        const menuItems = response.menuItems || [];
+        displayMenuItems(menuItems);
+    } catch (error) {
+        console.error('❌ Failed to load menu items:', error);
+        const menuItemsGrid = document.getElementById('menuItemsGrid');
+        menuItemsGrid.innerHTML = '<p style="color: #e74c3c; text-align: center; padding: 40px;">Failed to load menu items. Please try again.</p>';
+    }
+}
+
+function displayMenuItems(menuItems) {
     const menuItemsGrid = document.getElementById('menuItemsGrid');
+    
+    if (menuItems.length === 0) {
+        menuItemsGrid.innerHTML = '<p style="color: #666; text-align: center; padding: 40px;">No menu items found</p>';
+        return;
+    }
     
     menuItemsGrid.innerHTML = menuItems.map(item => `
         <div class="menu-item-card">
             <div class="menu-item-image">
-                <img src="${item.image}" alt="${item.name}" onerror="this.src='images/placeholder.jpg'">
-                <button class="availability-toggle" onclick="toggleAvailability(${item.id})">
+                <img src="${item.image || 'images/placeholder.jpg'}" alt="${item.name}" onerror="this.src='images/placeholder.jpg'">
+                <button class="availability-toggle ${item.available ? 'available' : 'unavailable'}" onclick="toggleAvailability(${item.id})">
                     ${item.available ? 'Available' : 'Unavailable'}
                 </button>
             </div>
             <div class="menu-item-content">
                 <div class="menu-item-name">${item.name}</div>
                 <div class="menu-item-description">${item.description}</div>
+                <div class="menu-item-category">${item.category}</div>
                 <div class="menu-item-footer">
                     <div class="menu-item-price">₹${item.price}</div>
                     <div class="menu-item-actions">
@@ -260,32 +362,38 @@ function loadMenuItems() {
     `).join('');
 }
 
-function loadAnalytics() {
-    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-    
-    // Calculate popular items
-    const itemCounts = {};
-    orders.forEach(order => {
-        order.items.forEach(item => {
-            itemCounts[item.name] = (itemCounts[item.name] || 0) + item.quantity;
-        });
-    });
-    
-    const popularItems = Object.entries(itemCounts)
-        .sort(([,a], [,b]) => b - a)
-        .slice(0, 5);
-    
-    const popularItemsList = document.getElementById('popularItemsList');
-    popularItemsList.innerHTML = popularItems.map(([name, count]) => `
-        <div class="popular-item">
-            <span class="popular-item-name">${name}</span>
-            <span class="popular-item-count">${count}</span>
-        </div>
-    `).join('');
+async function loadAnalytics() {
+    try {
+        console.log('📈 Loading analytics...');
+        const response = await apiClient.getAdminAnalytics(30);
+        const analytics = response.analytics;
+        
+        // Display popular items
+        const popularItemsList = document.getElementById('popularItemsList');
+        if (analytics.popularItems && analytics.popularItems.length > 0) {
+            popularItemsList.innerHTML = analytics.popularItems.map(item => `
+                <div class="popular-item">
+                    <span class="popular-item-name">${item._id}</span>
+                    <span class="popular-item-count">${item.totalQuantity}</span>
+                </div>
+            `).join('');
+        } else {
+            popularItemsList.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">No data available</p>';
+        }
+        
+        // You can add more analytics visualizations here
+        // For now, we'll keep the sales chart as a placeholder
+        
+    } catch (error) {
+        console.error('❌ Failed to load analytics:', error);
+        const popularItemsList = document.getElementById('popularItemsList');
+        popularItemsList.innerHTML = '<p style="color: #e74c3c; text-align: center; padding: 20px;">Failed to load analytics</p>';
+    }
 }
 
 // Modal Functions
 let editingItemId = null;
+let currentMenuItems = [];
 
 function openAddItemModal() {
     editingItemId = null;
@@ -294,24 +402,29 @@ function openAddItemModal() {
     document.getElementById('itemModal').style.display = 'block';
 }
 
-function editMenuItem(itemId) {
-    const menuItems = JSON.parse(localStorage.getItem('adminMenuItems') || '[]');
-    const item = menuItems.find(item => item.id === itemId);
-    
-    if (item) {
-        editingItemId = itemId;
-        document.getElementById('modalTitle').textContent = 'Edit Menu Item';
+async function editMenuItem(itemId) {
+    try {
+        // Find item in current menu items
+        const item = currentMenuItems.find(item => item.id === itemId);
         
-        // Populate form
-        document.getElementById('itemName').value = item.name;
-        document.getElementById('itemDescription').value = item.description;
-        document.getElementById('itemPrice').value = item.price;
-        document.getElementById('itemCategory').value = item.category;
-        document.getElementById('itemImage').value = item.image || '';
-        document.getElementById('itemAvailable').checked = item.available;
-        document.getElementById('itemPopular').checked = item.popular || false;
-        
-        document.getElementById('itemModal').style.display = 'block';
+        if (item) {
+            editingItemId = itemId;
+            document.getElementById('modalTitle').textContent = 'Edit Menu Item';
+            
+            // Populate form
+            document.getElementById('itemName').value = item.name;
+            document.getElementById('itemDescription').value = item.description;
+            document.getElementById('itemPrice').value = item.price;
+            document.getElementById('itemCategory').value = item.category;
+            document.getElementById('itemImage').value = item.image || '';
+            document.getElementById('itemAvailable').checked = item.available;
+            document.getElementById('itemPopular').checked = item.popular || false;
+            
+            document.getElementById('itemModal').style.display = 'block';
+        }
+    } catch (error) {
+        console.error('❌ Failed to edit menu item:', error);
+        alert('Failed to load menu item details');
     }
 }
 
@@ -320,80 +433,90 @@ function closeItemModal() {
     editingItemId = null;
 }
 
-function handleItemSubmit(e) {
+async function handleItemSubmit(e) {
     e.preventDefault();
     
-    const formData = new FormData(e.target);
-    const menuItems = JSON.parse(localStorage.getItem('adminMenuItems') || '[]');
-    
-    const itemData = {
-        name: formData.get('name'),
-        description: formData.get('description'),
-        price: parseInt(formData.get('price')),
-        category: formData.get('category'),
-        image: formData.get('image') || 'images/placeholder.jpg',
-        available: formData.get('available') === 'on',
-        popular: formData.get('popular') === 'on'
-    };
-    
-    if (editingItemId) {
-        // Update existing item
-        const itemIndex = menuItems.findIndex(item => item.id === editingItemId);
-        if (itemIndex !== -1) {
-            menuItems[itemIndex] = { ...menuItems[itemIndex], ...itemData };
-        }
-    } else {
-        // Add new item
-        const newItem = {
-            id: Date.now(),
-            ...itemData
+    try {
+        const formData = new FormData(e.target);
+        
+        const itemData = {
+            name: formData.get('name'),
+            description: formData.get('description'),
+            price: parseInt(formData.get('price')),
+            category: formData.get('category'),
+            image: formData.get('image') || 'images/placeholder.jpg',
+            available: formData.get('available') === 'on',
+            popular: formData.get('popular') === 'on'
         };
-        menuItems.push(newItem);
+        
+        // Show loading state
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = editingItemId ? 'Updating...' : 'Adding...';
+        
+        if (editingItemId) {
+            // Update existing item
+            await apiClient.updateMenuItem(editingItemId, itemData);
+            alert('Menu item updated successfully!');
+        } else {
+            // Add new item
+            await apiClient.addMenuItem(itemData);
+            alert('New menu item added successfully!');
+        }
+        
+        // Refresh display
+        await loadMenuItems();
+        await loadDashboardData();
+        closeItemModal();
+        
+    } catch (error) {
+        console.error('❌ Failed to save menu item:', error);
+        alert('Failed to save menu item: ' + error.message);
+        
+        // Reset button state
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        submitBtn.disabled = false;
+        submitBtn.textContent = editingItemId ? 'Save Changes' : 'Add Item';
     }
-    
-    // Save to localStorage
-    localStorage.setItem('adminMenuItems', JSON.stringify(menuItems));
-    
-    // Update main menu items for customer view
-    window.SAMPLE_MENU_ITEMS = menuItems;
-    
-    // Refresh display
-    loadMenuItems();
-    loadDashboardData();
-    closeItemModal();
-    
-    alert(editingItemId ? 'Menu item updated successfully!' : 'New menu item added successfully!');
 }
 
-function toggleAvailability(itemId) {
-    const menuItems = JSON.parse(localStorage.getItem('adminMenuItems') || '[]');
-    const itemIndex = menuItems.findIndex(item => item.id === itemId);
-    
-    if (itemIndex !== -1) {
-        menuItems[itemIndex].available = !menuItems[itemIndex].available;
-        localStorage.setItem('adminMenuItems', JSON.stringify(menuItems));
+async function toggleAvailability(itemId) {
+    try {
+        // Find current item
+        const item = currentMenuItems.find(item => item.id === itemId);
+        if (!item) return;
         
-        // Update main menu items
-        window.SAMPLE_MENU_ITEMS = menuItems;
+        const newAvailability = !item.available;
         
-        loadMenuItems();
-        alert(`Item ${menuItems[itemIndex].available ? 'enabled' : 'disabled'} successfully!`);
+        await apiClient.updateMenuItem(itemId, { available: newAvailability });
+        
+        // Refresh display
+        await loadMenuItems();
+        
+        alert(`Item ${newAvailability ? 'enabled' : 'disabled'} successfully!`);
+        
+    } catch (error) {
+        console.error('❌ Failed to toggle availability:', error);
+        alert('Failed to update item availability');
     }
 }
 
-function deleteMenuItem(itemId) {
+async function deleteMenuItem(itemId) {
     if (confirm('Are you sure you want to delete this menu item?')) {
-        const menuItems = JSON.parse(localStorage.getItem('adminMenuItems') || '[]');
-        const filteredItems = menuItems.filter(item => item.id !== itemId);
-        
-        localStorage.setItem('adminMenuItems', JSON.stringify(filteredItems));
-        
-        // Update main menu items
-        window.SAMPLE_MENU_ITEMS = filteredItems;
-        
-        loadMenuItems();
-        loadDashboardData();
-        alert('Menu item deleted successfully!');
+        try {
+            await apiClient.deleteMenuItem(itemId);
+            
+            // Refresh display
+            await loadMenuItems();
+            await loadDashboardData();
+            
+            alert('Menu item deleted successfully!');
+            
+        } catch (error) {
+            console.error('❌ Failed to delete menu item:', error);
+            alert('Failed to delete menu item: ' + error.message);
+        }
     }
 }
 
@@ -429,8 +552,11 @@ window.deleteMenuItem = deleteMenuItem;
 window.adminLogout = function() {
     if (confirm('Are you sure you want to logout?')) {
         // Use the auth manager to logout properly
-        if (window.authManager) {
-            window.authManager.logout();
+        if (window.authManagerClean) {
+            window.authManagerClean.logout();
+        } else if (window.apiClient) {
+            window.apiClient.logout();
+            window.location.href = 'index.html';
         } else {
             localStorage.removeItem('authToken');
             localStorage.removeItem('currentUser');

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Access - 24x7 Cafe</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2>24x7</h2>
+                <span>Cafe</span>
+            </div>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="menu.html" class="nav-link">Menu</a>
+                <a href="login.html" class="nav-link">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Admin Access Section -->
+    <section class="auth-section">
+        <div class="container">
+            <div class="auth-container">
+                <div class="auth-header">
+                    <h1><i class="fas fa-shield-alt"></i> Admin Access</h1>
+                    <p>Access the admin dashboard to manage orders and menu</p>
+                </div>
+
+                <div class="auth-content">
+                    <div class="admin-info">
+                        <h3>Admin Dashboard Features:</h3>
+                        <ul>
+                            <li><i class="fas fa-chart-bar"></i> Real-time analytics and reports</li>
+                            <li><i class="fas fa-shopping-bag"></i> Order management and status updates</li>
+                            <li><i class="fas fa-utensils"></i> Menu item management</li>
+                            <li><i class="fas fa-users"></i> Customer insights</li>
+                        </ul>
+                    </div>
+
+                    <div class="admin-access-options">
+                        <div class="access-option">
+                            <h4>Already have an admin account?</h4>
+                            <p>Login with your admin credentials to access the dashboard</p>
+                            <a href="login.html?admin=true" class="btn btn-primary">
+                                <i class="fas fa-sign-in-alt"></i>
+                                Login as Admin
+                            </a>
+                        </div>
+
+                        <div class="access-option">
+                            <h4>Need an admin account?</h4>
+                            <p>Create an account with an email containing 'admin' to get admin privileges</p>
+                            <a href="signup.html?admin=true" class="btn btn-secondary">
+                                <i class="fas fa-user-plus"></i>
+                                Create Admin Account
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="admin-note">
+                        <p><i class="fas fa-info-circle"></i> 
+                        <strong>Note:</strong> Admin accounts are automatically created for emails containing 'admin' 
+                        (e.g., admin@cafe247.com, manager.admin@college.edu)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>24x7 Cafe</h3>
+                    <p>Your favorite college cafe, delivering delicious food 24/7!</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="menu.html">Menu</a></li>
+                        <li><a href="orders.html">Orders</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <p><i class="fas fa-phone"></i> +91 98765 43210</p>
+                    <p><i class="fas fa-envelope"></i> info@24x7cafe.com</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 24x7 Cafe. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <style>
+        .admin-info {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .admin-info h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .admin-info ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .admin-info li {
+            padding: 8px 0;
+            color: #555;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .admin-info i {
+            color: #e74c3c;
+            width: 20px;
+        }
+
+        .admin-access-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .access-option {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .access-option h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .access-option p {
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .admin-note {
+            background: #e8f4fd;
+            border-left: 4px solid #3498db;
+            padding: 15px 20px;
+            border-radius: 5px;
+        }
+
+        .admin-note p {
+            margin: 0;
+            color: #2c3e50;
+        }
+
+        .admin-note i {
+            color: #3498db;
+            margin-right: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .admin-access-options {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+    </style>
+</body>
+</html>

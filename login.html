@@ -163,14 +163,19 @@
                 console.log('🔐 Logging in user:', email);
                 
                 // Login using auth manager
-                await authManagerClean.login(email, password);
+                const user = await authManagerClean.login(email, password);
                 
                 showMessage('Login successful! Redirecting...', 'success');
                 
                 // Redirect after short delay
                 setTimeout(() => {
-                    const returnUrl = new URLSearchParams(window.location.search).get('return') || 'index.html';
-                    window.location.href = returnUrl;
+                    // Check if user is admin and redirect accordingly
+                    if (user && user.isAdmin) {
+                        window.location.href = 'admin.html';
+                    } else {
+                        const returnUrl = new URLSearchParams(window.location.search).get('return') || 'index.html';
+                        window.location.href = returnUrl;
+                    }
                 }, 1000);
                 
             } catch (error) {

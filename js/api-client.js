@@ -451,6 +451,63 @@ class APIClient {
         });
         return response.data;
     }
+
+    // Admin API methods
+    async getAdminOrders(status = null) {
+        const endpoint = status && status !== 'all' ? `/admin-orders?status=${status}` : '/admin-orders';
+        const response = await this.request(endpoint);
+        return response.data || [];
+    }
+
+    async updateOrderStatus(orderId, status, notes = '') {
+        const response = await this.request('/admin-orders', {
+            method: 'PUT',
+            body: JSON.stringify({
+                orderId,
+                status,
+                notes
+            })
+        });
+        return response.data;
+    }
+
+    async getAdminAnalytics(days = 30) {
+        const response = await this.request(`/admin-analytics?days=${days}`);
+        return response.data;
+    }
+
+    async getAdminMenuItems() {
+        const response = await this.request('/admin-menu');
+        return response.data || [];
+    }
+
+    async addMenuItem(itemData) {
+        const response = await this.request('/admin-menu', {
+            method: 'POST',
+            body: JSON.stringify(itemData)
+        });
+        return response.data;
+    }
+
+    async updateMenuItem(itemId, itemData) {
+        const response = await this.request('/admin-menu', {
+            method: 'PUT',
+            body: JSON.stringify({ itemId, ...itemData })
+        });
+        return response.data;
+    }
+
+    async deleteMenuItem(itemId) {
+        const response = await this.request(`/admin-menu?itemId=${itemId}`, {
+            method: 'DELETE'
+        });
+        return response.data;
+    }
+
+    // Helper method to get auth token
+    getAuthToken() {
+        return localStorage.getItem('authToken');
+    }
 }
 
 // Create global API client instance

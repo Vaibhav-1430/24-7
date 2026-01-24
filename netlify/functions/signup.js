@@ -144,7 +144,7 @@ exports.handler = async (event, context) => {
             roomNumber: roomNumber.trim(),
             password,
             isActive: true,
-            isAdmin: false
+            isAdmin: email.includes('admin') || email === 'admin@cafe247.com' // Make admin users
         });
 
         const savedUser = await newUser.save();

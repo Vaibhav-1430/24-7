@@ -368,6 +368,42 @@ body {
     font-size: 0.9rem;
 }
 
+.admin-notes {
+    width: 100%;
+    padding: 8px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    min-height: 60px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.admin-notes:focus {
+    outline: none;
+    border-color: #e74c3c;
+}
+
+.availability-toggle.available {
+    background: rgba(39, 174, 96, 0.9);
+    color: white;
+}
+
+.availability-toggle.unavailable {
+    background: rgba(231, 76, 60, 0.9);
+    color: white;
+}
+
+.menu-item-category {
+    color: #666;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
 .update-status-btn {
     width: 100%;
     background: #27ae60;
