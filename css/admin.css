@@ -404,6 +404,51 @@ body {
     font-weight: 500;
 }
 
+.menu-item-pricing {
+    margin-bottom: 12px;
+}
+
+.menu-item-price {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #e74c3c;
+}
+
+.menu-item-half-price {
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 2px;
+}
+
+.menu-item-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 8px;
+}
+
+.veg-badge, .non-veg-badge, .popular-badge {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: 500;
+}
+
+.veg-badge {
+    background: #e8f5e8;
+    color: #27ae60;
+}
+
+.non-veg-badge {
+    background: #fdf2f2;
+    color: #e74c3c;
+}
+
+.popular-badge {
+    background: #fff3cd;
+    color: #856404;
+}
+
 .update-status-btn {
     width: 100%;
     background: #27ae60;

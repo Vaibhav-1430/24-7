@@ -126,14 +126,23 @@ async function loadMenuItems() {
     try {
         console.log('🍽️ Loading menu items...');
         const response = await apiClient.getAdminMenuItems();
-        const menuItems = response.menuItems || [];
+        const menuItems = response?.menuItems || [];
         currentMenuItems = menuItems; // Store for editing
         displayMenuItems(menuItems);
         return response;
     } catch (error) {
         console.error('❌ Failed to load menu items:', error);
         const menuItemsGrid = document.getElementById('menuItemsGrid');
-        menuItemsGrid.innerHTML = '<p style="color: #e74c3c; text-align: center; padding: 40px;">Failed to load menu items. Please try again.</p>';
+        menuItemsGrid.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #666; grid-column: 1 / -1;">
+                <i class="fas fa-utensils" style="font-size: 3rem; margin-bottom: 15px; color: #e74c3c;"></i>
+                <h3 style="color: #333; margin-bottom: 10px;">No Menu Items Yet</h3>
+                <p>Start by adding your first menu item using the "Add New Item" button above.</p>
+                <button onclick="openAddItemModal()" style="margin-top: 15px; background: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                    <i class="fas fa-plus"></i> Add Your First Item
+                </button>
+            </div>
+        `;
         return null;
     }
 }
@@ -148,28 +157,44 @@ async function loadDashboardData() {
         
         console.log('📊 Analytics data:', analytics);
         
-        // Update dashboard stats
-        document.getElementById('todayOrders').textContent = analytics.dashboard.todayOrders;
-        document.getElementById('todayRevenue').textContent = `₹${analytics.dashboard.todayRevenue}`;
-        document.getElementById('pendingOrders').textContent = analytics.dashboard.pendingOrders;
-        document.getElementById('menuItems').textContent = analytics.dashboard.totalMenuItems;
+        // Update dashboard stats with fallback values
+        document.getElementById('todayOrders').textContent = analytics?.dashboard?.todayOrders || 0;
+        document.getElementById('todayRevenue').textContent = `₹${analytics?.dashboard?.todayRevenue || 0}`;
+        document.getElementById('pendingOrders').textContent = analytics?.dashboard?.pendingOrders || 0;
+        document.getElementById('menuItems').textContent = analytics?.dashboard?.totalMenuItems || 0;
         
         // Load recent orders
-        const ordersResponse = await apiClient.getAdminOrders();
-        const recentOrders = ordersResponse.orders.slice(0, 5);
-        loadRecentOrders(recentOrders);
+        try {
+            const ordersResponse = await apiClient.getAdminOrders();
+            const recentOrders = ordersResponse?.orders?.slice(0, 5) || [];
+            loadRecentOrders(recentOrders);
+        } catch (orderError) {
+            console.error('❌ Failed to load recent orders:', orderError);
+            const recentOrdersContainer = document.getElementById('recentOrders');
+            recentOrdersContainer.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">No recent orders available</p>';
+        }
         
     } catch (error) {
         console.error('❌ Failed to load dashboard data:', error);
         
-        // Fallback to show empty state
+        // Show fallback data instead of error
         document.getElementById('todayOrders').textContent = '0';
         document.getElementById('todayRevenue').textContent = '₹0';
         document.getElementById('pendingOrders').textContent = '0';
         document.getElementById('menuItems').textContent = '0';
         
         const recentOrdersContainer = document.getElementById('recentOrders');
-        recentOrdersContainer.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">Failed to load dashboard data</p>';
+        recentOrdersContainer.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: #666;">
+                <i class="fas fa-info-circle" style="font-size: 2rem; margin-bottom: 10px; color: #3498db;"></i>
+                <p>Dashboard data will appear here once you have orders and menu items.</p>
+                <p style="font-size: 0.9rem; margin-top: 10px;">
+                    <strong>Getting started:</strong><br>
+                    1. Add menu items in the Menu Management section<br>
+                    2. Orders will appear here as customers place them
+                </p>
+            </div>
+        `;
     }
 }
 
@@ -197,12 +222,21 @@ async function loadOrders() {
     try {
         console.log('📋 Loading orders...');
         const response = await apiClient.getAdminOrders();
-        const orders = response.orders || [];
+        const orders = response?.orders || [];
         displayOrders(orders);
     } catch (error) {
         console.error('❌ Failed to load orders:', error);
         const ordersList = document.getElementById('ordersList');
-        ordersList.innerHTML = '<p style="color: #e74c3c; text-align: center; padding: 40px;">Failed to load orders. Please try again.</p>';
+        ordersList.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #666;">
+                <i class="fas fa-shopping-bag" style="font-size: 3rem; margin-bottom: 15px; color: #3498db;"></i>
+                <h3 style="color: #333; margin-bottom: 10px;">No Orders Yet</h3>
+                <p>Orders will appear here when customers start placing them.</p>
+                <p style="font-size: 0.9rem; margin-top: 15px; color: #999;">
+                    Make sure your menu items are available for customers to order.
+                </p>
+            </div>
+        `;
     }
 }
 
@@ -330,15 +364,24 @@ function displayMenuItems(menuItems) {
     const menuItemsGrid = document.getElementById('menuItemsGrid');
     
     if (menuItems.length === 0) {
-        menuItemsGrid.innerHTML = '<p style="color: #666; text-align: center; padding: 40px;">No menu items found</p>';
+        menuItemsGrid.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #666; grid-column: 1 / -1;">
+                <i class="fas fa-utensils" style="font-size: 3rem; margin-bottom: 15px; color: #e74c3c;"></i>
+                <h3 style="color: #333; margin-bottom: 10px;">No Menu Items Yet</h3>
+                <p>Start by adding your first menu item using the "Add New Item" button above.</p>
+                <button onclick="openAddItemModal()" style="margin-top: 15px; background: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                    <i class="fas fa-plus"></i> Add Your First Item
+                </button>
+            </div>
+        `;
         return;
     }
     
     menuItemsGrid.innerHTML = menuItems.map(item => `
         <div class="menu-item-card">
             <div class="menu-item-image">
-                <img src="${item.image || 'images/placeholder.jpg'}" alt="${item.name}" onerror="this.src='images/placeholder.jpg'">
-                <button class="availability-toggle ${item.available ? 'available' : 'unavailable'}" onclick="toggleAvailability(${item.id})">
+                <img src="${item.image || 'images/default-food.jpg'}" alt="${item.name}" onerror="this.src='images/default-food.jpg'">
+                <button class="availability-toggle ${item.available ? 'available' : 'unavailable'}" onclick="toggleAvailability('${item.id}')">
                     ${item.available ? 'Available' : 'Unavailable'}
                 </button>
             </div>
@@ -346,13 +389,20 @@ function displayMenuItems(menuItems) {
                 <div class="menu-item-name">${item.name}</div>
                 <div class="menu-item-description">${item.description}</div>
                 <div class="menu-item-category">${item.category}</div>
-                <div class="menu-item-footer">
+                <div class="menu-item-pricing">
                     <div class="menu-item-price">₹${item.price}</div>
+                    ${item.halfPrice ? `<div class="menu-item-half-price">Half: ₹${item.halfPrice}</div>` : ''}
+                </div>
+                <div class="menu-item-footer">
+                    <div class="menu-item-badges">
+                        ${item.isVeg ? '<span class="veg-badge">🟢 Veg</span>' : '<span class="non-veg-badge">🔴 Non-Veg</span>'}
+                        ${item.popular ? '<span class="popular-badge">⭐ Popular</span>' : ''}
+                    </div>
                     <div class="menu-item-actions">
-                        <button class="edit-btn" onclick="editMenuItem(${item.id})">
+                        <button class="edit-btn" onclick="editMenuItem('${item.id}')">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="delete-btn" onclick="deleteMenuItem(${item.id})">
+                        <button class="delete-btn" onclick="deleteMenuItem('${item.id}')">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -366,11 +416,11 @@ async function loadAnalytics() {
     try {
         console.log('📈 Loading analytics...');
         const response = await apiClient.getAdminAnalytics(30);
-        const analytics = response.analytics;
+        const analytics = response?.analytics;
         
         // Display popular items
         const popularItemsList = document.getElementById('popularItemsList');
-        if (analytics.popularItems && analytics.popularItems.length > 0) {
+        if (analytics?.popularItems && analytics.popularItems.length > 0) {
             popularItemsList.innerHTML = analytics.popularItems.map(item => `
                 <div class="popular-item">
                     <span class="popular-item-name">${item._id}</span>
@@ -378,16 +428,23 @@ async function loadAnalytics() {
                 </div>
             `).join('');
         } else {
-            popularItemsList.innerHTML = '<p style="color: #666; text-align: center; padding: 20px;">No data available</p>';
+            popularItemsList.innerHTML = `
+                <div style="text-align: center; padding: 20px; color: #666;">
+                    <i class="fas fa-chart-bar" style="font-size: 2rem; margin-bottom: 10px; color: #3498db;"></i>
+                    <p>Popular items will appear here once you have orders.</p>
+                </div>
+            `;
         }
-        
-        // You can add more analytics visualizations here
-        // For now, we'll keep the sales chart as a placeholder
         
     } catch (error) {
         console.error('❌ Failed to load analytics:', error);
         const popularItemsList = document.getElementById('popularItemsList');
-        popularItemsList.innerHTML = '<p style="color: #e74c3c; text-align: center; padding: 20px;">Failed to load analytics</p>';
+        popularItemsList.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: #666;">
+                <i class="fas fa-chart-bar" style="font-size: 2rem; margin-bottom: 10px; color: #3498db;"></i>
+                <p>Analytics data will appear here once you have orders and menu items.</p>
+            </div>
+        `;
     }
 }
 

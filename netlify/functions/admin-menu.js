@@ -14,18 +14,18 @@ const userSchema = new mongoose.Schema({
     isAdmin: { type: Boolean, default: false }
 }, { timestamps: true });
 
-// Menu Item Schema
+// Menu Item Schema - matching existing menu.js schema
 const menuItemSchema = new mongoose.Schema({
-    id: { type: Number, required: true, unique: true },
-    name: { type: String, required: true },
-    description: { type: String, required: true },
-    price: { type: Number, required: true, min: 0 },
+    name: { type: String, required: true, trim: true },
+    description: { type: String, required: true, trim: true },
+    category: { type: String, required: true, trim: true },
+    fullPrice: { type: Number, required: true, min: 0 },
     halfPrice: { type: Number, min: 0 },
-    category: { type: String, required: true },
-    image: { type: String, default: 'images/placeholder.jpg' },
+    image: { type: String, default: 'images/default-food.jpg' },
     available: { type: Boolean, default: true },
     popular: { type: Boolean, default: false },
     isVeg: { type: Boolean, default: true },
+    spiceLevel: { type: String, enum: ['Mild', 'Medium', 'Spicy'], default: 'Medium' },
     createdBy: { type: String },
     updatedBy: { type: String }
 }, { timestamps: true });
@@ -41,25 +41,37 @@ const connectDB = async () => {
     }
 
     try {
-        const uri = process.env.MONGODB_URI;
-        if (!uri) {
-            throw new Error('MONGODB_URI environment variable is not set');
+        const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://cafe24x7:cafe24x7password@cluster0.4kxqj.mongodb.net/cafe24x7?retryWrites=true&w=majority';
+        
+        if (mongoose.connection.readyState !== 0) {
+            await mongoose.disconnect();
         }
 
-        console.log('🔧 Connecting to MongoDB...');
-        cachedConnection = await mongoose.connect(uri, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-            serverSelectionTimeoutMS: 5000,
-            socketTimeoutMS: 45000,
+        const connection = await mongoose.connect(mongoUri, {
+            serverSelectionTimeoutMS: 10000,
+            socketTimeoutMS: 30000
         });
 
-        // Initialize models
-        User = mongoose.models.User || mongoose.model('User', userSchema);
-        MenuItem = mongoose.models.MenuItem || mongoose.model('MenuItem', menuItemSchema);
+        // Create models if they don't exist
+        if (!User) {
+            try {
+                User = mongoose.model('User');
+            } catch {
+                User = mongoose.model('User', userSchema);
+            }
+        }
 
-        console.log('✅ MongoDB connected successfully');
-        return cachedConnection;
+        if (!MenuItem) {
+            try {
+                MenuItem = mongoose.model('MenuItem');
+            } catch {
+                MenuItem = mongoose.model('MenuItem', menuItemSchema);
+            }
+        }
+
+        cachedConnection = connection;
+        console.log('✅ Connected to MongoDB Atlas');
+        return connection;
     } catch (error) {
         console.error('❌ MongoDB connection failed:', error.message);
         throw error;
@@ -119,12 +131,29 @@ exports.handler = async (event, context) => {
                 .sort({ category: 1, name: 1 })
                 .lean();
 
+            // Transform data to match admin interface expectations
+            const transformedItems = menuItems.map(item => ({
+                id: item._id.toString(),
+                name: item.name,
+                description: item.description,
+                price: item.fullPrice, // Map fullPrice to price for admin interface
+                halfPrice: item.halfPrice,
+                category: item.category,
+                image: item.image,
+                available: item.available,
+                popular: item.popular,
+                isVeg: item.isVeg,
+                spiceLevel: item.spiceLevel,
+                createdAt: item.createdAt,
+                updatedAt: item.updatedAt
+            }));
+
             return {
                 statusCode: 200,
                 headers,
                 body: JSON.stringify({
                     success: true,
-                    menuItems: menuItems
+                    menuItems: transformedItems
                 })
             };
         }
@@ -156,16 +185,18 @@ exports.handler = async (event, context) => {
                 };
             }
 
-            // Generate new ID
-            const lastItem = await MenuItem.findOne().sort({ id: -1 });
-            const newId = lastItem ? lastItem.id + 1 : 1;
-
             const newItem = new MenuItem({
-                ...itemData,
-                id: newId,
-                createdBy: user.email,
-                available: itemData.available !== false, // Default to true
-                popular: itemData.popular || false
+                name: itemData.name,
+                description: itemData.description,
+                fullPrice: itemData.price, // Map price to fullPrice for database
+                halfPrice: itemData.halfPrice || null,
+                category: itemData.category,
+                image: itemData.image || 'images/default-food.jpg',
+                available: itemData.available !== false,
+                popular: itemData.popular || false,
+                isVeg: itemData.isVeg !== false,
+                spiceLevel: itemData.spiceLevel || 'Medium',
+                createdBy: user.email
             });
 
             const savedItem = await newItem.save();
@@ -193,12 +224,26 @@ exports.handler = async (event, context) => {
                 };
             }
 
-            // Add update metadata
-            updateData.updatedBy = user.email;
+            // Transform update data to match database schema
+            const dbUpdateData = {
+                updatedBy: user.email
+            };
+
+            // Map admin interface fields to database fields
+            if (updateData.name) dbUpdateData.name = updateData.name;
+            if (updateData.description) dbUpdateData.description = updateData.description;
+            if (updateData.price) dbUpdateData.fullPrice = updateData.price;
+            if (updateData.halfPrice !== undefined) dbUpdateData.halfPrice = updateData.halfPrice;
+            if (updateData.category) dbUpdateData.category = updateData.category;
+            if (updateData.image) dbUpdateData.image = updateData.image;
+            if (updateData.available !== undefined) dbUpdateData.available = updateData.available;
+            if (updateData.popular !== undefined) dbUpdateData.popular = updateData.popular;
+            if (updateData.isVeg !== undefined) dbUpdateData.isVeg = updateData.isVeg;
+            if (updateData.spiceLevel) dbUpdateData.spiceLevel = updateData.spiceLevel;
 
             const result = await MenuItem.updateOne(
-                { id: parseInt(itemId) },
-                { $set: updateData }
+                { _id: itemId },
+                { $set: dbUpdateData }
             );
 
             if (result.matchedCount === 0) {
@@ -231,7 +276,7 @@ exports.handler = async (event, context) => {
                 };
             }
 
-            const result = await MenuItem.deleteOne({ id: parseInt(itemId) });
+            const result = await MenuItem.deleteOne({ _id: itemId });
 
             if (result.deletedCount === 0) {
                 return {

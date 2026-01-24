@@ -80,26 +80,45 @@ const connectDB = async () => {
     }
 
     try {
-        const uri = process.env.MONGODB_URI;
-        if (!uri) {
-            throw new Error('MONGODB_URI environment variable is not set');
+        const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://cafe24x7:cafe24x7password@cluster0.4kxqj.mongodb.net/cafe24x7?retryWrites=true&w=majority';
+        
+        if (mongoose.connection.readyState !== 0) {
+            await mongoose.disconnect();
         }
 
-        console.log('🔧 Connecting to MongoDB...');
-        cachedConnection = await mongoose.connect(uri, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-            serverSelectionTimeoutMS: 5000,
-            socketTimeoutMS: 45000,
+        const connection = await mongoose.connect(mongoUri, {
+            serverSelectionTimeoutMS: 10000,
+            socketTimeoutMS: 30000
         });
 
-        // Initialize models
-        User = mongoose.models.User || mongoose.model('User', userSchema);
-        Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
-        MenuItem = mongoose.models.MenuItem || mongoose.model('MenuItem', menuItemSchema);
+        // Create models if they don't exist
+        if (!User) {
+            try {
+                User = mongoose.model('User');
+            } catch {
+                User = mongoose.model('User', userSchema);
+            }
+        }
 
-        console.log('✅ MongoDB connected successfully');
-        return cachedConnection;
+        if (!Order) {
+            try {
+                Order = mongoose.model('Order');
+            } catch {
+                Order = mongoose.model('Order', orderSchema);
+            }
+        }
+
+        if (!MenuItem) {
+            try {
+                MenuItem = mongoose.model('MenuItem');
+            } catch {
+                MenuItem = mongoose.model('MenuItem', menuItemSchema);
+            }
+        }
+
+        cachedConnection = connection;
+        console.log('✅ Connected to MongoDB Atlas');
+        return connection;
     } catch (error) {
         console.error('❌ MongoDB connection failed:', error.message);
         throw error;
