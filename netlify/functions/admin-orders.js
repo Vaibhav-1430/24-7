@@ -1,7 +1,102 @@
-const { MongoClient } = require('mongodb');
+const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 
-const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri);
+// User Schema for admin verification
+const userSchema = new mongoose.Schema({
+    firstName: { type: String, required: true },
+    lastName: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    phone: { type: String, required: true },
+    hostel: { type: String, required: true },
+    roomNumber: { type: String, required: true },
+    password: { type: String, required: true },
+    authToken: { type: String },
+    isActive: { type: Boolean, default: true },
+    isAdmin: { type: Boolean, default: false }
+}, { timestamps: true });
+
+// Order Schema
+const orderItemSchema = new mongoose.Schema({
+    menuItemId: { type: String, required: true },
+    name: { type: String, required: true },
+    price: { type: Number, required: true, min: 0 },
+    quantity: { type: Number, required: true, min: 1 },
+    instructions: { type: String, default: '' }
+});
+
+const orderSchema = new mongoose.Schema({
+    userId: { type: String, required: true },
+    orderNumber: { type: String, required: true, unique: true },
+    items: [orderItemSchema],
+    contact: {
+        name: { type: String, required: true },
+        phone: { type: String, required: true }
+    },
+    delivery: {
+        hostel: { type: String, required: true },
+        roomNumber: { type: String, required: true },
+        instructions: { type: String, default: '' }
+    },
+    payment: {
+        method: { type: String, required: true, enum: ['cod', 'upi'] },
+        transactionId: { type: String }
+    },
+    pricing: {
+        subtotal: { type: Number, required: true, min: 0 },
+        deliveryFee: { type: Number, required: true, min: 0 },
+        total: { type: Number, required: true, min: 0 }
+    },
+    status: { 
+        type: String, 
+        enum: ['received', 'preparing', 'ready', 'out_for_delivery', 'delivered', 'cancelled'], 
+        default: 'received' 
+    },
+    statusHistory: [{
+        status: String,
+        timestamp: { type: Date, default: Date.now },
+        updatedBy: String,
+        notes: String
+    }],
+    adminNotes: { type: String, default: '' },
+    orderTime: { type: Date, default: Date.now },
+    estimatedDelivery: { type: Date }
+}, { timestamps: true });
+
+// Global connection cache
+let cachedConnection = null;
+let User = null;
+let Order = null;
+
+const connectDB = async () => {
+    if (cachedConnection && mongoose.connection.readyState === 1) {
+        return cachedConnection;
+    }
+
+    try {
+        const uri = process.env.MONGODB_URI;
+        if (!uri) {
+            throw new Error('MONGODB_URI environment variable is not set');
+        }
+
+        console.log('🔧 Connecting to MongoDB...');
+        cachedConnection = await mongoose.connect(uri, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
+        });
+
+        // Initialize models
+        User = mongoose.models.User || mongoose.model('User', userSchema);
+        Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
+
+        console.log('✅ MongoDB connected successfully');
+        return cachedConnection;
+    } catch (error) {
+        console.error('❌ MongoDB connection failed:', error.message);
+        throw error;
+    }
+};
 
 exports.handler = async (event, context) => {
     // Set CORS headers
@@ -21,6 +116,9 @@ exports.handler = async (event, context) => {
     }
 
     try {
+        // Connect to database
+        await connectDB();
+
         // Verify admin token
         const authHeader = event.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -33,12 +131,8 @@ exports.handler = async (event, context) => {
 
         const token = authHeader.substring(7);
         
-        await client.connect();
-        const db = client.db('cafe247');
-        const usersCollection = db.collection('users');
-        
         // Verify token and check admin status
-        const user = await usersCollection.findOne({ 
+        const user = await User.findOne({ 
             authToken: token,
             isAdmin: true 
         });
@@ -51,8 +145,6 @@ exports.handler = async (event, context) => {
             };
         }
 
-        const ordersCollection = db.collection('orders');
-
         if (event.httpMethod === 'GET') {
             // Get all orders with optional status filter
             const { status, limit = '50' } = event.queryStringParameters || {};
@@ -62,11 +154,10 @@ exports.handler = async (event, context) => {
                 query.status = status;
             }
 
-            const orders = await ordersCollection
-                .find(query)
+            const orders = await Order.find(query)
                 .sort({ createdAt: -1 })
                 .limit(parseInt(limit))
-                .toArray();
+                .lean();
 
             return {
                 statusCode: 200,
@@ -101,8 +192,7 @@ exports.handler = async (event, context) => {
 
             const updateData = {
                 status: status,
-                updatedAt: new Date(),
-                updatedBy: user.email
+                updatedAt: new Date()
             };
 
             if (notes) {
@@ -117,7 +207,7 @@ exports.handler = async (event, context) => {
                 notes: notes || ''
             };
 
-            const result = await ordersCollection.updateOne(
+            const result = await Order.updateOne(
                 { orderNumber: orderId },
                 { 
                     $set: updateData,
@@ -159,7 +249,5 @@ exports.handler = async (event, context) => {
                 details: error.message 
             })
         };
-    } finally {
-        await client.close();
     }
 };

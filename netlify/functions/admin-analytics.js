@@ -1,7 +1,110 @@
-const { MongoClient } = require('mongodb');
+const mongoose = require('mongoose');
 
-const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri);
+// User Schema for admin verification
+const userSchema = new mongoose.Schema({
+    firstName: { type: String, required: true },
+    lastName: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    phone: { type: String, required: true },
+    hostel: { type: String, required: true },
+    roomNumber: { type: String, required: true },
+    password: { type: String, required: true },
+    authToken: { type: String },
+    isActive: { type: Boolean, default: true },
+    isAdmin: { type: Boolean, default: false }
+}, { timestamps: true });
+
+// Order Schema
+const orderItemSchema = new mongoose.Schema({
+    menuItemId: { type: String, required: true },
+    name: { type: String, required: true },
+    price: { type: Number, required: true, min: 0 },
+    quantity: { type: Number, required: true, min: 1 },
+    instructions: { type: String, default: '' }
+});
+
+const orderSchema = new mongoose.Schema({
+    userId: { type: String, required: true },
+    orderNumber: { type: String, required: true, unique: true },
+    items: [orderItemSchema],
+    contact: {
+        name: { type: String, required: true },
+        phone: { type: String, required: true }
+    },
+    delivery: {
+        hostel: { type: String, required: true },
+        roomNumber: { type: String, required: true },
+        instructions: { type: String, default: '' }
+    },
+    payment: {
+        method: { type: String, required: true, enum: ['cod', 'upi'] },
+        transactionId: { type: String }
+    },
+    pricing: {
+        subtotal: { type: Number, required: true, min: 0 },
+        deliveryFee: { type: Number, required: true, min: 0 },
+        total: { type: Number, required: true, min: 0 }
+    },
+    status: { 
+        type: String, 
+        enum: ['received', 'preparing', 'ready', 'out_for_delivery', 'delivered', 'cancelled'], 
+        default: 'received' 
+    },
+    orderTime: { type: Date, default: Date.now },
+    estimatedDelivery: { type: Date }
+}, { timestamps: true });
+
+// Menu Item Schema
+const menuItemSchema = new mongoose.Schema({
+    id: { type: Number, required: true, unique: true },
+    name: { type: String, required: true },
+    description: { type: String, required: true },
+    price: { type: Number, required: true, min: 0 },
+    halfPrice: { type: Number, min: 0 },
+    category: { type: String, required: true },
+    image: { type: String, default: 'images/placeholder.jpg' },
+    available: { type: Boolean, default: true },
+    popular: { type: Boolean, default: false },
+    isVeg: { type: Boolean, default: true }
+}, { timestamps: true });
+
+// Global connection cache
+let cachedConnection = null;
+let User = null;
+let Order = null;
+let MenuItem = null;
+
+const connectDB = async () => {
+    if (cachedConnection && mongoose.connection.readyState === 1) {
+        return cachedConnection;
+    }
+
+    try {
+        const uri = process.env.MONGODB_URI;
+        if (!uri) {
+            throw new Error('MONGODB_URI environment variable is not set');
+        }
+
+        console.log('🔧 Connecting to MongoDB...');
+        cachedConnection = await mongoose.connect(uri, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
+        });
+
+        // Initialize models
+        User = mongoose.models.User || mongoose.model('User', userSchema);
+        Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
+        MenuItem = mongoose.models.MenuItem || mongoose.model('MenuItem', menuItemSchema);
+
+        console.log('✅ MongoDB connected successfully');
+        return cachedConnection;
+    } catch (error) {
+        console.error('❌ MongoDB connection failed:', error.message);
+        throw error;
+    }
+};
 
 exports.handler = async (event, context) => {
     // Set CORS headers
@@ -29,6 +132,9 @@ exports.handler = async (event, context) => {
     }
 
     try {
+        // Connect to database
+        await connectDB();
+
         // Verify admin token
         const authHeader = event.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -41,12 +147,8 @@ exports.handler = async (event, context) => {
 
         const token = authHeader.substring(7);
         
-        await client.connect();
-        const db = client.db('cafe247');
-        const usersCollection = db.collection('users');
-        
         // Verify token and check admin status
-        const user = await usersCollection.findOne({ 
+        const user = await User.findOne({ 
             authToken: token,
             isAdmin: true 
         });
@@ -58,9 +160,6 @@ exports.handler = async (event, context) => {
                 body: JSON.stringify({ error: 'Admin access required' })
             };
         }
-
-        const ordersCollection = db.collection('orders');
-        const menuCollection = db.collection('menu_items');
 
         // Get date range (default to last 30 days)
         const { days = '30' } = event.queryStringParameters || {};
@@ -74,22 +173,22 @@ exports.handler = async (event, context) => {
         tomorrow.setDate(tomorrow.getDate() + 1);
 
         // Today's orders and revenue
-        const todayOrders = await ordersCollection.find({
+        const todayOrders = await Order.find({
             createdAt: { $gte: today, $lt: tomorrow }
-        }).toArray();
+        }).lean();
 
         const todayRevenue = todayOrders.reduce((sum, order) => sum + (order.pricing?.total || 0), 0);
 
         // Pending orders
-        const pendingOrders = await ordersCollection.countDocuments({
+        const pendingOrders = await Order.countDocuments({
             status: { $in: ['received', 'preparing', 'ready'] }
         });
 
         // Total menu items
-        const totalMenuItems = await menuCollection.countDocuments({});
+        const totalMenuItems = await MenuItem.countDocuments({});
 
         // Popular items analysis
-        const popularItemsAggregation = await ordersCollection.aggregate([
+        const popularItemsAggregation = await Order.aggregate([
             { $match: { createdAt: { $gte: startDate } } },
             { $unwind: '$items' },
             {
@@ -102,10 +201,10 @@ exports.handler = async (event, context) => {
             },
             { $sort: { totalQuantity: -1 } },
             { $limit: 10 }
-        ]).toArray();
+        ]);
 
         // Sales by day (last 7 days)
-        const salesByDay = await ordersCollection.aggregate([
+        const salesByDay = await Order.aggregate([
             {
                 $match: {
                     createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
@@ -122,10 +221,10 @@ exports.handler = async (event, context) => {
                 }
             },
             { $sort: { _id: 1 } }
-        ]).toArray();
+        ]);
 
         // Order status distribution
-        const statusDistribution = await ordersCollection.aggregate([
+        const statusDistribution = await Order.aggregate([
             { $match: { createdAt: { $gte: startDate } } },
             {
                 $group: {
@@ -133,10 +232,10 @@ exports.handler = async (event, context) => {
                     count: { $sum: 1 }
                 }
             }
-        ]).toArray();
+        ]);
 
         // Peak hours analysis
-        const peakHours = await ordersCollection.aggregate([
+        const peakHours = await Order.aggregate([
             { $match: { createdAt: { $gte: startDate } } },
             {
                 $group: {
@@ -145,10 +244,10 @@ exports.handler = async (event, context) => {
                 }
             },
             { $sort: { orderCount: -1 } }
-        ]).toArray();
+        ]);
 
         // Customer insights
-        const customerInsights = await ordersCollection.aggregate([
+        const customerInsights = await Order.aggregate([
             { $match: { createdAt: { $gte: startDate } } },
             {
                 $group: {
@@ -160,7 +259,7 @@ exports.handler = async (event, context) => {
             },
             { $sort: { totalSpent: -1 } },
             { $limit: 10 }
-        ]).toArray();
+        ]);
 
         return {
             statusCode: 200,
@@ -198,7 +297,5 @@ exports.handler = async (event, context) => {
                 details: error.message 
             })
         };
-    } finally {
-        await client.close();
     }
 };

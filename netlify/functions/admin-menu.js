@@ -1,7 +1,70 @@
-const { MongoClient } = require('mongodb');
+const mongoose = require('mongoose');
 
-const uri = process.env.MONGODB_URI;
-const client = new MongoClient(uri);
+// User Schema for admin verification
+const userSchema = new mongoose.Schema({
+    firstName: { type: String, required: true },
+    lastName: { type: String, required: true },
+    email: { type: String, required: true, unique: true },
+    phone: { type: String, required: true },
+    hostel: { type: String, required: true },
+    roomNumber: { type: String, required: true },
+    password: { type: String, required: true },
+    authToken: { type: String },
+    isActive: { type: Boolean, default: true },
+    isAdmin: { type: Boolean, default: false }
+}, { timestamps: true });
+
+// Menu Item Schema
+const menuItemSchema = new mongoose.Schema({
+    id: { type: Number, required: true, unique: true },
+    name: { type: String, required: true },
+    description: { type: String, required: true },
+    price: { type: Number, required: true, min: 0 },
+    halfPrice: { type: Number, min: 0 },
+    category: { type: String, required: true },
+    image: { type: String, default: 'images/placeholder.jpg' },
+    available: { type: Boolean, default: true },
+    popular: { type: Boolean, default: false },
+    isVeg: { type: Boolean, default: true },
+    createdBy: { type: String },
+    updatedBy: { type: String }
+}, { timestamps: true });
+
+// Global connection cache
+let cachedConnection = null;
+let User = null;
+let MenuItem = null;
+
+const connectDB = async () => {
+    if (cachedConnection && mongoose.connection.readyState === 1) {
+        return cachedConnection;
+    }
+
+    try {
+        const uri = process.env.MONGODB_URI;
+        if (!uri) {
+            throw new Error('MONGODB_URI environment variable is not set');
+        }
+
+        console.log('🔧 Connecting to MongoDB...');
+        cachedConnection = await mongoose.connect(uri, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
+        });
+
+        // Initialize models
+        User = mongoose.models.User || mongoose.model('User', userSchema);
+        MenuItem = mongoose.models.MenuItem || mongoose.model('MenuItem', menuItemSchema);
+
+        console.log('✅ MongoDB connected successfully');
+        return cachedConnection;
+    } catch (error) {
+        console.error('❌ MongoDB connection failed:', error.message);
+        throw error;
+    }
+};
 
 exports.handler = async (event, context) => {
     // Set CORS headers
@@ -21,6 +84,9 @@ exports.handler = async (event, context) => {
     }
 
     try {
+        // Connect to database
+        await connectDB();
+
         // Verify admin token
         const authHeader = event.headers.authorization;
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -33,12 +99,8 @@ exports.handler = async (event, context) => {
 
         const token = authHeader.substring(7);
         
-        await client.connect();
-        const db = client.db('cafe247');
-        const usersCollection = db.collection('users');
-        
         // Verify token and check admin status
-        const user = await usersCollection.findOne({ 
+        const user = await User.findOne({ 
             authToken: token,
             isAdmin: true 
         });
@@ -51,14 +113,11 @@ exports.handler = async (event, context) => {
             };
         }
 
-        const menuCollection = db.collection('menu_items');
-
         if (event.httpMethod === 'GET') {
             // Get all menu items for admin
-            const menuItems = await menuCollection
-                .find({})
+            const menuItems = await MenuItem.find({})
                 .sort({ category: 1, name: 1 })
-                .toArray();
+                .lean();
 
             return {
                 statusCode: 200,
@@ -84,7 +143,7 @@ exports.handler = async (event, context) => {
             }
 
             // Check if item already exists
-            const existingItem = await menuCollection.findOne({ 
+            const existingItem = await MenuItem.findOne({ 
                 name: itemData.name,
                 category: itemData.category 
             });
@@ -97,16 +156,19 @@ exports.handler = async (event, context) => {
                 };
             }
 
-            const newItem = {
+            // Generate new ID
+            const lastItem = await MenuItem.findOne().sort({ id: -1 });
+            const newId = lastItem ? lastItem.id + 1 : 1;
+
+            const newItem = new MenuItem({
                 ...itemData,
-                id: Date.now(),
-                createdAt: new Date(),
+                id: newId,
                 createdBy: user.email,
                 available: itemData.available !== false, // Default to true
                 popular: itemData.popular || false
-            };
+            });
 
-            const result = await menuCollection.insertOne(newItem);
+            const savedItem = await newItem.save();
 
             return {
                 statusCode: 201,
@@ -114,7 +176,7 @@ exports.handler = async (event, context) => {
                 body: JSON.stringify({
                     success: true,
                     message: 'Menu item added successfully',
-                    itemId: result.insertedId
+                    itemId: savedItem._id
                 })
             };
         }
@@ -132,10 +194,9 @@ exports.handler = async (event, context) => {
             }
 
             // Add update metadata
-            updateData.updatedAt = new Date();
             updateData.updatedBy = user.email;
 
-            const result = await menuCollection.updateOne(
+            const result = await MenuItem.updateOne(
                 { id: parseInt(itemId) },
                 { $set: updateData }
             );
@@ -170,7 +231,7 @@ exports.handler = async (event, context) => {
                 };
             }
 
-            const result = await menuCollection.deleteOne({ id: parseInt(itemId) });
+            const result = await MenuItem.deleteOne({ id: parseInt(itemId) });
 
             if (result.deletedCount === 0) {
                 return {
@@ -206,7 +267,5 @@ exports.handler = async (event, context) => {
                 details: error.message 
             })
         };
-    } finally {
-        await client.close();
     }
 };
