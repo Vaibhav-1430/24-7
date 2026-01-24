@@ -71,13 +71,18 @@
                                     <label for="hostelName">Hostel Name</label>
                                     <select id="hostelName" name="hostelName" required>
                                         <option value="">Select your hostel</option>
-                                        <option value="Hostel A">Hostel A</option>
-                                        <option value="Hostel B">Hostel B</option>
-                                        <option value="Hostel C">Hostel C</option>
-                                        <option value="Hostel D">Hostel D</option>
-                                        <option value="Girls Hostel 1">Girls Hostel 1</option>
-                                        <option value="Girls Hostel 2">Girls Hostel 2</option>
-                                        <option value="PG Accommodation">PG Accommodation</option>
+                                        <option value="Vivekanand Boys Hostel">Vivekanand Boys Hostel</option>
+                                        <option value="Tagore Boys Hostel">Tagore Boys Hostel</option>
+                                        <option value="Jawahar Boys Hostel">Jawahar Boys Hostel</option>
+                                        <option value="Vardhman Boys Hostel">Vardhman Boys Hostel</option>
+                                        <option value="Mandela Boys Hostel">Mandela Boys Hostel</option>
+                                        <option value="Kasturba Girls Hostel">Kasturba Girls Hostel</option>
+                                        <option value="Mandela Girls Hostel">Mandela Girls Hostel</option>
+                                        <option value="Sarojini Girls Hostels">Sarojini Girls Hostels</option>
+                                        <option value="Mother Teresa Girls Hostel">Mother Teresa Girls Hostel</option>
+                                        <option value="Indra Girls Hostel">Indra Girls Hostel</option>
+                                        <option value="Old PG Hostel">Old PG Hostel</option>
+                                        <option value="New PG Hostel">New PG Hostel</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
@@ -179,11 +184,7 @@
                             </div>
                             <div class="summary-row">
                                 <span>Delivery Fee</span>
-                                <span id="checkoutDeliveryFee">₹10</span>
-                            </div>
-                            <div class="summary-row">
-                                <span>Tax (5%)</span>
-                                <span id="checkoutTax">₹0</span>
+                                <span id="checkoutDeliveryFee">₹5</span>
                             </div>
                             <div class="summary-divider"></div>
                             <div class="summary-row total">
@@ -214,27 +215,77 @@
     <!-- Order Success Modal -->
     <div class="modal" id="orderSuccessModal">
         <div class="modal-content success-modal">
-            <div class="success-header">
-                <i class="fas fa-check-circle"></i>
-                <h2>Order Placed Successfully!</h2>
-                <p>Your order has been received and is being prepared</p>
-            </div>
-            <div class="order-details">
-                <div class="order-info">
-                    <h4>Order Details</h4>
-                    <p><strong>Order ID:</strong> <span id="orderIdDisplay"></span></p>
-                    <p><strong>Estimated Delivery:</strong> <span id="estimatedDelivery"></span></p>
-                    <p><strong>Total Amount:</strong> <span id="orderTotalDisplay"></span></p>
+            <span class="close" onclick="closeOrderSuccessModal()">&times;</span>
+            
+            <!-- Success Animation -->
+            <div class="success-animation">
+                <div class="checkmark-circle">
+                    <div class="checkmark"></div>
                 </div>
             </div>
+            
+            <div class="success-header">
+                <h2>🎉 Order Placed Successfully!</h2>
+                <p>Thank you for your order! We're preparing your delicious meal.</p>
+            </div>
+            
+            <div class="order-details-card">
+                <div class="order-info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Order ID</div>
+                        <div class="info-value" id="orderIdDisplay">#ORD123456</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Total Amount</div>
+                        <div class="info-value price" id="orderTotalDisplay">₹0</div>
+                    </div>
+                    <div class="info-item full-width">
+                        <div class="info-label">Estimated Delivery</div>
+                        <div class="info-value delivery-time">
+                            <i class="fas fa-clock"></i>
+                            <span id="estimatedDelivery">30 minutes</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="delivery-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <div class="progress-steps">
+                        <div class="step active">
+                            <i class="fas fa-check"></i>
+                            <span>Order Placed</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-utensils"></i>
+                            <span>Preparing</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-motorcycle"></i>
+                            <span>On the way</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-home"></i>
+                            <span>Delivered</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <div class="success-actions">
-                <button class="track-order-btn" onclick="trackOrder()">
+                <button class="btn-primary track-order-btn" onclick="trackOrder()">
                     <i class="fas fa-map-marker-alt"></i>
-                    Track Order
+                    Track Your Order
                 </button>
-                <button class="continue-shopping-btn" onclick="continueShopping()">
-                    Continue Shopping
+                <button class="btn-secondary continue-shopping-btn" onclick="continueShopping()">
+                    <i class="fas fa-utensils"></i>
+                    Order More Food
                 </button>
+            </div>
+            
+            <div class="success-footer">
+                <p><i class="fas fa-phone"></i> Need help? Call us at <strong>+91 98765 43210</strong></p>
             </div>
         </div>
     </div>

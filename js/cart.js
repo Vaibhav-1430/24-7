@@ -187,21 +187,17 @@ function updateOrderSummary() {
         itemCount = cartItems.reduce((count, item) => count + item.quantity, 0);
     }
     
-    const deliveryFee = subtotal > 0 ? 10 : 0;
-    const taxRate = 0.05;
-    const tax = Math.round(subtotal * taxRate);
-    const total = subtotal + deliveryFee + tax;
+    const deliveryFee = subtotal > 0 ? 5 : 0;
+    const total = subtotal + deliveryFee;
     
     console.log('🛒 Order summary - Subtotal:', subtotal, 'Items:', itemCount);
     
     const subtotalEl = document.getElementById('subtotal');
     const deliveryFeeEl = document.getElementById('deliveryFee');
-    const taxEl = document.getElementById('tax');
     const totalEl = document.getElementById('total');
     
     if (subtotalEl) subtotalEl.textContent = `₹${subtotal}`;
     if (deliveryFeeEl) deliveryFeeEl.textContent = `₹${deliveryFee}`;
-    if (taxEl) taxEl.textContent = `₹${tax}`;
     if (totalEl) totalEl.textContent = `₹${total}`;
 }
 

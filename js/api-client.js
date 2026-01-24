@@ -268,6 +268,36 @@ class APIClient {
                     }
                     break;
                     
+                case '/orders':
+                    if (method === 'POST') {
+                        const orderData = JSON.parse(options.body || '{}');
+                        const mockOrder = {
+                            id: 'mock_order_' + Date.now(),
+                            orderNumber: 'ORD' + Date.now().toString().slice(-6),
+                            items: orderData.items || [],
+                            contact: orderData.contact || {},
+                            delivery: orderData.delivery || {},
+                            payment: orderData.payment || {},
+                            pricing: orderData.pricing || {},
+                            status: 'pending',
+                            orderTime: new Date().toISOString(),
+                            estimatedDelivery: new Date(Date.now() + 30 * 60 * 1000).toISOString()
+                        };
+                        
+                        return {
+                            success: true,
+                            message: 'Order created successfully',
+                            data: mockOrder
+                        };
+                    } else if (method === 'GET') {
+                        return {
+                            success: true,
+                            message: 'Orders retrieved successfully',
+                            data: []
+                        };
+                    }
+                    break;
+                    
                 default:
                     console.log(`🎭 Mock endpoint not implemented: ${endpoint}`);
                     return {
@@ -397,7 +427,7 @@ class APIClient {
 
     // Order methods
     async createOrder(orderData) {
-        const response = await this.request('/orders-create', {
+        const response = await this.request('/orders', {
             method: 'POST',
             body: JSON.stringify(orderData)
         });
@@ -405,13 +435,13 @@ class APIClient {
     }
 
     async getOrders(status = null) {
-        const endpoint = status ? `/orders-get?status=${status}` : '/orders-get';
+        const endpoint = status ? `/orders?status=${status}` : '/orders';
         const response = await this.request(endpoint);
         return response.data || [];
     }
 
     async getOrder(orderId) {
-        const response = await this.request(`/orders-get/${orderId}`);
+        const response = await this.request(`/orders/${orderId}`);
         return response.data;
     }
 
