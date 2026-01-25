@@ -197,18 +197,29 @@ exports.handler = async (event, context) => {
                 };
             }
 
-            // Check if item already exists
-            const existingItem = await MenuItem.findOne({ 
-                name: itemData.name,
-                category: itemData.category 
-            });
-            
-            if (existingItem) {
-                return {
-                    statusCode: 409,
-                    headers,
-                    body: JSON.stringify({ error: 'Menu item with this name already exists in this category' })
-                };
+            // Check if item already exists (unless force add is enabled)
+            if (!itemData.forceAdd) {
+                const existingItem = await MenuItem.findOne({ 
+                    name: { $regex: new RegExp(`^${itemData.name.trim()}$`, 'i') }, // Case-insensitive exact match
+                    category: itemData.category 
+                });
+                
+                if (existingItem) {
+                    return {
+                        statusCode: 409,
+                        headers,
+                        body: JSON.stringify({ 
+                            error: `Menu item "${itemData.name}" already exists in "${itemData.category}" category`,
+                            suggestion: 'Try using a different name, modify the existing item, or enable "Force add" option',
+                            existingItem: {
+                                id: existingItem._id,
+                                name: existingItem.name,
+                                description: existingItem.description,
+                                price: existingItem.fullPrice
+                            }
+                        })
+                    };
+                }
             }
 
             const newItem = new MenuItem({

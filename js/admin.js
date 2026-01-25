@@ -494,6 +494,7 @@ function openAddItemModal() {
     editingItemId = null;
     document.getElementById('modalTitle').textContent = 'Add New Item';
     document.getElementById('itemForm').reset();
+    document.getElementById('forceAdd').checked = false; // Reset force add option
     document.getElementById('itemModal').style.display = 'block';
 }
 
@@ -541,7 +542,8 @@ async function handleItemSubmit(e) {
             category: formData.get('category'),
             image: formData.get('image') || 'images/placeholder.jpg',
             available: formData.get('available') === 'on',
-            popular: formData.get('popular') === 'on'
+            popular: formData.get('popular') === 'on',
+            forceAdd: formData.get('forceAdd') === 'on'
         };
         
         // Show loading state
@@ -567,7 +569,30 @@ async function handleItemSubmit(e) {
         
     } catch (error) {
         console.error('❌ Failed to save menu item:', error);
-        alert('Failed to save menu item: ' + error.message);
+        
+        // Handle duplicate item error specifically
+        if (error.message.includes('409') || error.message.includes('already exists')) {
+            const confirmAdd = confirm(
+                `A menu item with this name might already exist in this category.\n\n` +
+                `Error: ${error.message}\n\n` +
+                `Would you like to:\n` +
+                `• Click "OK" to modify the item name and try again\n` +
+                `• Click "Cancel" to check existing items first`
+            );
+            
+            if (confirmAdd) {
+                // Keep the modal open and let user modify the name
+                const nameInput = document.getElementById('itemName');
+                nameInput.focus();
+                nameInput.select();
+            } else {
+                closeItemModal();
+                // Switch to menu management to show existing items
+                showSection('menu');
+            }
+        } else {
+            alert('Failed to save menu item: ' + error.message);
+        }
         
         // Reset button state
         const submitBtn = e.target.querySelector('button[type="submit"]');
