@@ -236,6 +236,24 @@ exports.handler = async (event, context) => {
         });
         console.log(`📊 Analytics: Pending orders: ${pendingOrders}`);
 
+        // Delivered orders (all-time)
+        const deliveredOrders = await Order.countDocuments({
+            status: 'delivered'
+        });
+        console.log(`📊 Analytics: Delivered orders: ${deliveredOrders}`);
+
+        // Total orders (all-time)
+        const totalOrders = await Order.countDocuments({});
+        console.log(`📊 Analytics: Total orders: ${totalOrders}`);
+
+        // Total revenue (all-time)
+        const totalRevenueResult = await Order.aggregate([
+            { $match: { status: { $ne: 'cancelled' } } },
+            { $group: { _id: null, totalRevenue: { $sum: '$pricing.total' } } }
+        ]);
+        const totalRevenue = totalRevenueResult[0]?.totalRevenue || 0;
+        console.log(`📊 Analytics: Total revenue: ₹${totalRevenue}`);
+
         // Total menu items
         const totalMenuItems = await MenuItem.countDocuments({});
         console.log(`📊 Analytics: Total menu items: ${totalMenuItems}`);
@@ -324,7 +342,10 @@ exports.handler = async (event, context) => {
                         todayOrders: todayOrders.length,
                         todayRevenue: todayRevenue,
                         pendingOrders: pendingOrders,
-                        totalMenuItems: totalMenuItems
+                        totalMenuItems: totalMenuItems,
+                        deliveredOrders: deliveredOrders,
+                        totalOrders: totalOrders,
+                        totalRevenue: totalRevenue
                     },
                     popularItems: popularItemsAggregation,
                     salesByDay: salesByDay,

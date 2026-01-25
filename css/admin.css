@@ -166,6 +166,31 @@ body {
     margin-bottom: 40px;
 }
 
+/* Ensure proper layout for 7 cards */
+@media (min-width: 1400px) {
+    .stats-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (max-width: 1399px) and (min-width: 1200px) {
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 1199px) and (min-width: 768px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 767px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .stat-card {
     background: white;
     padding: 25px;
@@ -196,6 +221,9 @@ body {
 .stat-card:nth-child(2) .stat-icon { background: #27ae60; }
 .stat-card:nth-child(3) .stat-icon { background: #f39c12; }
 .stat-card:nth-child(4) .stat-icon { background: #e74c3c; }
+.stat-card:nth-child(5) .stat-icon { background: #2ecc71; }
+.stat-card:nth-child(6) .stat-icon { background: #9b59b6; }
+.stat-card:nth-child(7) .stat-icon { background: #34495e; }
 
 .stat-info h3 {
     font-size: 1.8rem;

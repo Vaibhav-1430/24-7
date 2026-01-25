@@ -204,6 +204,9 @@ async function loadDashboardData() {
         document.getElementById('todayRevenue').textContent = `₹${analytics?.dashboard?.todayRevenue || 0}`;
         document.getElementById('pendingOrders').textContent = analytics?.dashboard?.pendingOrders || 0;
         document.getElementById('menuItems').textContent = analytics?.dashboard?.totalMenuItems || 0;
+        document.getElementById('deliveredOrders').textContent = analytics?.dashboard?.deliveredOrders || 0;
+        document.getElementById('totalRevenue').textContent = `₹${analytics?.dashboard?.totalRevenue || 0}`;
+        document.getElementById('totalOrders').textContent = analytics?.dashboard?.totalOrders || 0;
         
         // Load recent orders
         try {
@@ -228,6 +231,9 @@ async function loadDashboardData() {
         document.getElementById('todayRevenue').textContent = '₹0';
         document.getElementById('pendingOrders').textContent = '0';
         document.getElementById('menuItems').textContent = '0';
+        document.getElementById('deliveredOrders').textContent = '0';
+        document.getElementById('totalRevenue').textContent = '₹0';
+        document.getElementById('totalOrders').textContent = '0';
         
         const recentOrdersContainer = document.getElementById('recentOrders');
         recentOrdersContainer.innerHTML = `
@@ -841,6 +847,9 @@ Today's Orders: ${analytics?.dashboard?.todayOrders || 0}
 Today's Revenue: ₹${analytics?.dashboard?.todayRevenue || 0}
 Pending Orders: ${analytics?.dashboard?.pendingOrders || 0}
 Menu Items: ${analytics?.dashboard?.totalMenuItems || 0}
+Delivered Orders: ${analytics?.dashboard?.deliveredOrders || 0}
+Total Revenue: ₹${analytics?.dashboard?.totalRevenue || 0}
+Total Orders: ${analytics?.dashboard?.totalOrders || 0}
 
 Check browser console for detailed logs.`);
         
