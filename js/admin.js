@@ -674,17 +674,22 @@ window.requestAdminAccess = async function() {
         button.disabled = true;
         button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Requesting...';
         
-        const result = await apiClient.grantAdminPrivileges();
+        // First get user info
+        const userInfo = await apiClient.getUserInfo();
+        console.log('👤 User info:', userInfo);
+        
+        // Grant admin privileges
+        const result = await apiClient.makeCurrentUserAdmin();
         console.log('👑 Admin access result:', result);
         
-        alert(`✅ ${result.message}`);
+        alert(`✅ ${result.message}\n\nYou now have admin privileges! The page will reload.`);
         
         // Reload the page to refresh admin status
         window.location.reload();
         
     } catch (error) {
         console.error('👑 Admin access request failed:', error);
-        alert(`❌ Failed to grant admin access: ${error.message}`);
+        alert(`❌ Failed to grant admin access: ${error.message}\n\nPlease try creating a new account with an email containing 'admin'.`);
         
         // Reset button
         const button = event.target;

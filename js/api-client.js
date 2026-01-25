@@ -531,6 +531,19 @@ class APIClient {
         console.log('👑 Grant admin response:', response);
         return response.data;
     }
+
+    // Get current user info and grant admin
+    async getUserInfo() {
+        const response = await this.request('/user-info');
+        return response.data;
+    }
+
+    async makeCurrentUserAdmin() {
+        const response = await this.request('/user-info', {
+            method: 'POST'
+        });
+        return response.data;
+    }
 }
 
 // Create global API client instance

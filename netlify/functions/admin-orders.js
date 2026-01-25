@@ -131,29 +131,52 @@ exports.handler = async (event, context) => {
         // Connect to database
         await connectDB();
 
-        // Verify admin token
-        const authHeader = event.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        // Verify admin token using JWT
+        const authHeader = event.headers.authorization || event.headers.Authorization;
+        if (!authHeader) {
             return {
                 statusCode: 401,
                 headers,
-                body: JSON.stringify({ error: 'Authorization token required' })
+                body: JSON.stringify({ error: 'No token provided' })
             };
         }
 
-        const token = authHeader.substring(7);
+        const token = authHeader.replace('Bearer ', '');
         
-        // Verify token and check admin status
-        const user = await User.findOne({ 
-            authToken: token,
-            isAdmin: true 
-        });
+        // Verify JWT token
+        const jwtSecret = process.env.JWT_SECRET || 'b0abcba6c167b5bedd1c212099fe54bbf0226afb36995bca3eae3bbcf0f3f999c88d6b76efc74bf452ba706806ee5e4758cc54241750b8e21719d96be2117fe4';
+        
+        let decoded;
+        try {
+            decoded = jwt.verify(token, jwtSecret);
+        } catch (jwtError) {
+            return {
+                statusCode: 401,
+                headers,
+                body: JSON.stringify({ error: 'Invalid or expired token' })
+            };
+        }
+
+        // Find user by ID from JWT
+        const user = await User.findById(decoded.userId);
         
         if (!user) {
             return {
+                statusCode: 401,
+                headers,
+                body: JSON.stringify({ error: 'User not found' })
+            };
+        }
+
+        // Check if user has admin privileges
+        if (!user.isAdmin) {
+            return {
                 statusCode: 403,
                 headers,
-                body: JSON.stringify({ error: 'Admin access required' })
+                body: JSON.stringify({ 
+                    error: 'Admin access required',
+                    message: `User ${user.email} does not have admin privileges.`
+                })
             };
         }
 
