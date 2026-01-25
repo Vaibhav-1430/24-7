@@ -477,7 +477,12 @@ class APIClient {
     }
 
     async getAdminMenuItems() {
+        console.log('🔧 API: Getting admin menu items...');
+        console.log('🔑 API: Auth token:', this.getAuthToken());
+        
         const response = await this.request('/admin-menu');
+        console.log('📡 API: Admin menu response:', response);
+        
         return response.data || [];
     }
 
@@ -507,6 +512,24 @@ class APIClient {
     // Helper method to get auth token
     getAuthToken() {
         return localStorage.getItem('authToken');
+    }
+
+    // Test admin functionality
+    async testAdminEndpoint() {
+        console.log('🧪 Testing admin endpoint...');
+        const response = await this.request('/admin-test');
+        console.log('🧪 Admin test response:', response);
+        return response.data;
+    }
+
+    // Grant admin privileges to current user
+    async grantAdminPrivileges() {
+        console.log('👑 Requesting admin privileges...');
+        const response = await this.request('/grant-admin', {
+            method: 'POST'
+        });
+        console.log('👑 Grant admin response:', response);
+        return response.data;
     }
 }
 

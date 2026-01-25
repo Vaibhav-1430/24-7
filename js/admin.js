@@ -125,24 +125,62 @@ function showSection(sectionName) {
 async function loadMenuItems() {
     try {
         console.log('🍽️ Loading menu items...');
+        console.log('🔑 Auth token:', localStorage.getItem('authToken'));
+        
+        // Test the API endpoint directly
         const response = await apiClient.getAdminMenuItems();
+        console.log('📡 API Response:', response);
+        
         const menuItems = response?.menuItems || [];
+        console.log('🍽️ Menu items received:', menuItems);
+        
         currentMenuItems = menuItems; // Store for editing
         displayMenuItems(menuItems);
         return response;
     } catch (error) {
         console.error('❌ Failed to load menu items:', error);
-        const menuItemsGrid = document.getElementById('menuItemsGrid');
-        menuItemsGrid.innerHTML = `
-            <div style="text-align: center; padding: 40px; color: #666; grid-column: 1 / -1;">
-                <i class="fas fa-utensils" style="font-size: 3rem; margin-bottom: 15px; color: #e74c3c;"></i>
-                <h3 style="color: #333; margin-bottom: 10px;">No Menu Items Yet</h3>
-                <p>Start by adding your first menu item using the "Add New Item" button above.</p>
-                <button onclick="openAddItemModal()" style="margin-top: 15px; background: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
-                    <i class="fas fa-plus"></i> Add Your First Item
-                </button>
-            </div>
-        `;
+        console.error('❌ Error details:', error.message);
+        
+        // Check if it's an admin privileges error
+        if (error.message.includes('Admin access required') || error.message.includes('403')) {
+            const menuItemsGrid = document.getElementById('menuItemsGrid');
+            menuItemsGrid.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #666; grid-column: 1 / -1;">
+                    <i class="fas fa-user-shield" style="font-size: 3rem; margin-bottom: 15px; color: #e74c3c;"></i>
+                    <h3 style="color: #333; margin-bottom: 10px;">Admin Access Required</h3>
+                    <p>Your account doesn't have admin privileges yet.</p>
+                    <p style="font-size: 0.9rem; margin: 15px 0; color: #666;">
+                        If your email contains 'admin', we can grant you admin access automatically.
+                    </p>
+                    <div style="margin-top: 20px;">
+                        <button onclick="requestAdminAccess()" style="background: #27ae60; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; margin-right: 10px;">
+                            <i class="fas fa-crown"></i> Request Admin Access
+                        </button>
+                        <button onclick="loadMenuItems()" style="background: #3498db; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer;">
+                            <i class="fas fa-refresh"></i> Try Again
+                        </button>
+                    </div>
+                    <p style="font-size: 0.8rem; margin-top: 15px; color: #999;">
+                        If you don't have an admin email, create a new account with an email containing 'admin'
+                    </p>
+                </div>
+            `;
+        } else {
+            const menuItemsGrid = document.getElementById('menuItemsGrid');
+            menuItemsGrid.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: #666; grid-column: 1 / -1;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 15px; color: #f39c12;"></i>
+                    <h3 style="color: #333; margin-bottom: 10px;">Unable to Load Menu Items</h3>
+                    <p>Error: ${error.message}</p>
+                    <p style="font-size: 0.9rem; margin-top: 15px; color: #999;">
+                        This might be a temporary issue. Please try refreshing the page.
+                    </p>
+                    <button onclick="loadMenuItems()" style="margin-top: 15px; background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                        <i class="fas fa-refresh"></i> Try Again
+                    </button>
+                </div>
+            `;
+        }
         return null;
     }
 }
@@ -605,6 +643,55 @@ window.editMenuItem = editMenuItem;
 window.closeItemModal = closeItemModal;
 window.toggleAvailability = toggleAvailability;
 window.deleteMenuItem = deleteMenuItem;
+
+// Test function for debugging
+window.testAdminConnection = async function() {
+    try {
+        console.log('🧪 Testing admin connection...');
+        const testResult = await apiClient.testAdminEndpoint();
+        console.log('🧪 Test result:', testResult);
+        
+        alert(`Admin Test Results:
+MongoDB Connected: ${testResult.mongodbConnected}
+Has Auth Header: ${testResult.hasAuthHeader}
+Token Length: ${testResult.tokenLength}
+Timestamp: ${testResult.timestamp}`);
+        
+    } catch (error) {
+        console.error('🧪 Test failed:', error);
+        alert(`Admin Test Failed: ${error.message}`);
+    }
+};
+
+// Request admin access function
+window.requestAdminAccess = async function() {
+    try {
+        console.log('👑 Requesting admin access...');
+        
+        // Show loading state
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Requesting...';
+        
+        const result = await apiClient.grantAdminPrivileges();
+        console.log('👑 Admin access result:', result);
+        
+        alert(`✅ ${result.message}`);
+        
+        // Reload the page to refresh admin status
+        window.location.reload();
+        
+    } catch (error) {
+        console.error('👑 Admin access request failed:', error);
+        alert(`❌ Failed to grant admin access: ${error.message}`);
+        
+        // Reset button
+        const button = event.target;
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-crown"></i> Request Admin Access';
+    }
+};
 
 window.adminLogout = function() {
     if (confirm('Are you sure you want to logout?')) {

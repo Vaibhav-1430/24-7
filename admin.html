@@ -138,10 +138,16 @@
                 <div class="section-header">
                     <h1>Menu Management</h1>
                     <p>Add, edit, and manage your menu items</p>
-                    <button class="add-item-btn" onclick="openAddItemModal()">
-                        <i class="fas fa-plus"></i>
-                        Add New Item
-                    </button>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="add-item-btn" onclick="openAddItemModal()">
+                            <i class="fas fa-plus"></i>
+                            Add New Item
+                        </button>
+                        <button class="add-item-btn" onclick="testAdminConnection()" style="background: #3498db;">
+                            <i class="fas fa-flask"></i>
+                            Test Connection
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Menu Items Grid -->

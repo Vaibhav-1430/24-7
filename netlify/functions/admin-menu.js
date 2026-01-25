@@ -113,15 +113,28 @@ exports.handler = async (event, context) => {
         
         // Verify token and check admin status
         const user = await User.findOne({ 
-            authToken: token,
-            isAdmin: true 
+            authToken: token
         });
         
         if (!user) {
             return {
+                statusCode: 401,
+                headers,
+                body: JSON.stringify({ error: 'Invalid authentication token' })
+            };
+        }
+
+        // Check if user has admin privileges
+        if (!user.isAdmin) {
+            return {
                 statusCode: 403,
                 headers,
-                body: JSON.stringify({ error: 'Admin access required' })
+                body: JSON.stringify({ 
+                    error: 'Admin access required',
+                    message: `User ${user.email} does not have admin privileges. Please contact administrator or create account with email containing 'admin'.`,
+                    userEmail: user.email,
+                    isAdmin: user.isAdmin
+                })
             };
         }
 
