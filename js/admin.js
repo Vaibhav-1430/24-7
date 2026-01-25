@@ -325,10 +325,10 @@ function displayOrders(orders) {
                 <div class="order-actions">
                     <h4>Update Status</h4>
                     <select class="status-select" data-order-id="${order.orderNumber || order.id}">
-                        <option value="received" ${order.status === 'received' ? 'selected' : ''}>Order Received</option>
+                        <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Order Pending</option>
+                        <option value="confirmed" ${order.status === 'confirmed' ? 'selected' : ''}>Order Confirmed</option>
                         <option value="preparing" ${order.status === 'preparing' ? 'selected' : ''}>Preparing</option>
                         <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>Ready for Delivery</option>
-                        <option value="out_for_delivery" ${order.status === 'out_for_delivery' ? 'selected' : ''}>Out for Delivery</option>
                         <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>Delivered</option>
                         <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
                     </select>

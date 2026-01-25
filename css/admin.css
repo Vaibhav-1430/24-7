@@ -259,7 +259,8 @@ body {
     text-transform: uppercase;
 }
 
-.status-received { background: #e3f2fd; color: #1976d2; }
+.status-pending { background: #fff3cd; color: #856404; }
+.status-confirmed { background: #e3f2fd; color: #1976d2; }
 .status-preparing { background: #fff3e0; color: #f57c00; }
 .status-ready { background: #e8f5e8; color: #388e3c; }
 .status-delivered { background: #f3e5f5; color: #7b1fa2; }

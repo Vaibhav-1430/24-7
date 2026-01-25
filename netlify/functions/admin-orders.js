@@ -48,8 +48,8 @@ const orderSchema = new mongoose.Schema({
     },
     status: { 
         type: String, 
-        enum: ['received', 'preparing', 'ready', 'out_for_delivery', 'delivered', 'cancelled'], 
-        default: 'received' 
+        enum: ['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled'], 
+        default: 'pending' 
     },
     statusHistory: [{
         status: String,
@@ -75,8 +75,12 @@ const connectDB = async () => {
     try {
         const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://cafe24x7:cafe24x7password@cluster0.4kxqj.mongodb.net/cafe24x7?retryWrites=true&w=majority';
         
+        // Completely disconnect and clear models if connection exists
         if (mongoose.connection.readyState !== 0) {
             await mongoose.disconnect();
+            // Clear all models
+            mongoose.models = {};
+            mongoose.modelSchemas = {};
         }
 
         const connection = await mongoose.connect(mongoUri, {
@@ -97,7 +101,7 @@ const connectDB = async () => {
             try {
                 Order = mongoose.model('Order');
             } catch {
-                Order = mongoose.model('Order', orderSchema);
+                Order = mongoose.model('Order', orderSchema, 'orders');
             }
         }
 
@@ -184,22 +188,32 @@ exports.handler = async (event, context) => {
             // Get all orders with optional status filter
             const { status, limit = '50' } = event.queryStringParameters || {};
             
+            console.log('🔍 Admin: Fetching orders...');
+            console.log('🔍 Admin: Status filter:', status);
+            console.log('🔍 Admin: Limit:', limit);
+            
             let query = {};
             if (status && status !== 'all') {
                 query.status = status;
             }
+
+            console.log('🔍 Admin: Query:', query);
 
             const orders = await Order.find(query)
                 .sort({ createdAt: -1 })
                 .limit(parseInt(limit))
                 .lean();
 
+            console.log(`🔍 Admin: Found ${orders.length} orders in database`);
+            console.log('🔍 Admin: First order:', orders[0]);
+
             return {
                 statusCode: 200,
                 headers,
                 body: JSON.stringify({
                     success: true,
-                    orders: orders
+                    orders: orders,
+                    count: orders.length
                 })
             };
         }
@@ -216,7 +230,7 @@ exports.handler = async (event, context) => {
                 };
             }
 
-            const validStatuses = ['received', 'preparing', 'ready', 'out_for_delivery', 'delivered', 'cancelled'];
+            const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled'];
             if (!validStatuses.includes(status)) {
                 return {
                     statusCode: 400,
