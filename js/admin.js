@@ -263,7 +263,7 @@ function loadRecentOrders(orders) {
             <div class="order-info">
                 <h4>Order #${order.orderNumber || order.id}</h4>
                 <p>${order.contact.name} - ${order.delivery.hostel} ${order.delivery.roomNumber}</p>
-                <p>₹${order.pricing.total} - ${formatTime(order.createdAt || order.orderTime)}</p>
+                <p>₹${order.pricing.total} - ${formatTime(order.orderTime || order.createdAt)}</p>
             </div>
             <div class="order-status status-${order.status}">${order.status}</div>
         </div>
@@ -314,7 +314,7 @@ function displayOrders(orders) {
             <div class="order-header">
                 <div>
                     <div class="order-id">Order #${order.orderNumber || order.id}</div>
-                    <div class="order-time">${formatDateTime(order.createdAt || order.orderTime)}</div>
+                    <div class="order-time">${formatDateTime(order.orderTime || order.createdAt)}</div>
                 </div>
                 <div class="order-status status-${order.status}">${order.status}</div>
             </div>

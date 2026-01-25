@@ -52,6 +52,7 @@ const orderSchema = new mongoose.Schema({
         default: 'pending' 
     },
     orderTime: { type: Date, default: Date.now },
+    deliveredAt: { type: Date }, // Track when order was actually delivered
     estimatedDelivery: { type: Date }
 }, { timestamps: true });
 
@@ -219,16 +220,23 @@ exports.handler = async (event, context) => {
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
 
-        // Today's orders and revenue
-        const todayOrders = await Order.find({
-            createdAt: { $gte: today, $lt: tomorrow }
+        // Today's delivered orders and revenue (based on delivery completion)
+        const todayDeliveredOrders = await Order.find({
+            status: 'delivered',
+            deliveredAt: { $gte: today, $lt: tomorrow }
         }).lean();
 
-        console.log(`📊 Analytics: Found ${todayOrders.length} orders today`);
+        console.log(`📊 Analytics: Found ${todayDeliveredOrders.length} orders delivered today`);
         console.log('📊 Analytics: Today date range:', { today, tomorrow });
 
-        const todayRevenue = todayOrders.reduce((sum, order) => sum + (order.pricing?.total || 0), 0);
-        console.log(`📊 Analytics: Today's revenue: ₹${todayRevenue}`);
+        const todayRevenue = todayDeliveredOrders.reduce((sum, order) => sum + (order.pricing?.total || 0), 0);
+        console.log(`📊 Analytics: Today's revenue from delivered orders: ₹${todayRevenue}`);
+
+        // All orders placed today (for comparison)
+        const todayPlacedOrders = await Order.find({
+            orderTime: { $gte: today, $lt: tomorrow }
+        }).lean();
+        console.log(`📊 Analytics: ${todayPlacedOrders.length} orders were placed today`);
 
         // Pending orders (using correct status values)
         const pendingOrders = await Order.countDocuments({
@@ -246,21 +254,21 @@ exports.handler = async (event, context) => {
         const totalOrders = await Order.countDocuments({});
         console.log(`📊 Analytics: Total orders: ${totalOrders}`);
 
-        // Total revenue (all-time)
+        // Total revenue (all-time, only from delivered orders)
         const totalRevenueResult = await Order.aggregate([
-            { $match: { status: { $ne: 'cancelled' } } },
+            { $match: { status: 'delivered', deliveredAt: { $exists: true } } },
             { $group: { _id: null, totalRevenue: { $sum: '$pricing.total' } } }
         ]);
         const totalRevenue = totalRevenueResult[0]?.totalRevenue || 0;
-        console.log(`📊 Analytics: Total revenue: ₹${totalRevenue}`);
+        console.log(`📊 Analytics: Total revenue from delivered orders: ₹${totalRevenue}`);
 
         // Total menu items
         const totalMenuItems = await MenuItem.countDocuments({});
         console.log(`📊 Analytics: Total menu items: ${totalMenuItems}`);
 
-        // Popular items analysis
+        // Popular items analysis (based on order placement time)
         const popularItemsAggregation = await Order.aggregate([
-            { $match: { createdAt: { $gte: startDate } } },
+            { $match: { orderTime: { $gte: startDate } } },
             { $unwind: '$items' },
             {
                 $group: {
@@ -274,18 +282,21 @@ exports.handler = async (event, context) => {
             { $limit: 10 }
         ]);
 
-        // Sales by day (last 7 days)
+        // Sales by day (last 7 days, based on delivery completion)
         const salesByDay = await Order.aggregate([
             {
                 $match: {
-                    createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-                    status: { $ne: 'cancelled' }
+                    status: 'delivered',
+                    deliveredAt: { 
+                        $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+                        $exists: true 
+                    }
                 }
             },
             {
                 $group: {
                     _id: {
-                        $dateToString: { format: '%Y-%m-%d', date: '$createdAt' }
+                        $dateToString: { format: '%Y-%m-%d', date: '$deliveredAt' }
                     },
                     totalOrders: { $sum: 1 },
                     totalRevenue: { $sum: '$pricing.total' }
@@ -294,9 +305,9 @@ exports.handler = async (event, context) => {
             { $sort: { _id: 1 } }
         ]);
 
-        // Order status distribution
+        // Order status distribution (based on order placement time)
         const statusDistribution = await Order.aggregate([
-            { $match: { createdAt: { $gte: startDate } } },
+            { $match: { orderTime: { $gte: startDate } } },
             {
                 $group: {
                     _id: '$status',
@@ -305,27 +316,27 @@ exports.handler = async (event, context) => {
             }
         ]);
 
-        // Peak hours analysis
+        // Peak hours analysis (based on order placement time)
         const peakHours = await Order.aggregate([
-            { $match: { createdAt: { $gte: startDate } } },
+            { $match: { orderTime: { $gte: startDate } } },
             {
                 $group: {
-                    _id: { $hour: '$createdAt' },
+                    _id: { $hour: '$orderTime' },
                     orderCount: { $sum: 1 }
                 }
             },
             { $sort: { orderCount: -1 } }
         ]);
 
-        // Customer insights
+        // Customer insights (based on order placement time)
         const customerInsights = await Order.aggregate([
-            { $match: { createdAt: { $gte: startDate } } },
+            { $match: { orderTime: { $gte: startDate } } },
             {
                 $group: {
                     _id: '$contact.phone',
                     orderCount: { $sum: 1 },
                     totalSpent: { $sum: '$pricing.total' },
-                    lastOrder: { $max: '$createdAt' }
+                    lastOrder: { $max: '$orderTime' }
                 }
             },
             { $sort: { totalSpent: -1 } },
@@ -339,13 +350,14 @@ exports.handler = async (event, context) => {
                 success: true,
                 analytics: {
                     dashboard: {
-                        todayOrders: todayOrders.length,
-                        todayRevenue: todayRevenue,
+                        todayOrders: todayDeliveredOrders.length, // Orders delivered today
+                        todayRevenue: todayRevenue, // Revenue from orders delivered today
                         pendingOrders: pendingOrders,
                         totalMenuItems: totalMenuItems,
                         deliveredOrders: deliveredOrders,
                         totalOrders: totalOrders,
-                        totalRevenue: totalRevenue
+                        totalRevenue: totalRevenue, // Revenue from all delivered orders
+                        todayPlacedOrders: todayPlacedOrders.length // Additional metric for placed orders
                     },
                     popularItems: popularItemsAggregation,
                     salesByDay: salesByDay,

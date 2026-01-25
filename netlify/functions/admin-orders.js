@@ -59,6 +59,7 @@ const orderSchema = new mongoose.Schema({
     }],
     adminNotes: { type: String, default: '' },
     orderTime: { type: Date, default: Date.now },
+    deliveredAt: { type: Date }, // Track when order was actually delivered
     estimatedDelivery: { type: Date }
 }, { timestamps: true });
 
@@ -252,6 +253,12 @@ exports.handler = async (event, context) => {
 
             if (notes) {
                 updateData.adminNotes = notes;
+            }
+
+            // Set deliveredAt timestamp when order is marked as delivered
+            if (status === 'delivered') {
+                updateData.deliveredAt = new Date();
+                console.log(`📦 Order ${orderId} marked as delivered at ${updateData.deliveredAt}`);
             }
 
             // Add status history
