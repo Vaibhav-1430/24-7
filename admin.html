@@ -50,6 +50,10 @@
                     <i class="fas fa-chart-bar"></i>
                     <span>Analytics</span>
                 </a>
+                <a href="#notifications" class="menu-item" data-section="notifications">
+                    <i class="fas fa-bell"></i>
+                    <span>Notifications</span>
+                </a>
             </div>
         </aside>
 
@@ -223,6 +227,90 @@
                         <div class="sales-chart">
                             <p>Chart visualization would go here</p>
                             <p><em>In a real application, this would show interactive charts</em></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Notifications Section -->
+            <section id="notifications" class="admin-section">
+                <div class="section-header">
+                    <h1>Notification Settings</h1>
+                    <p>Configure alerts and notifications for new orders</p>
+                </div>
+
+                <!-- Notification Settings -->
+                <div class="notification-settings">
+                    <div class="settings-card">
+                        <h3><i class="fas fa-volume-up"></i> Sound Notifications</h3>
+                        <div class="setting-item">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="soundEnabled" checked>
+                                <span class="slider"></span>
+                            </label>
+                            <div class="setting-info">
+                                <h4>Enable Sound Alerts</h4>
+                                <p>Play notification sound when new orders arrive</p>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <button class="test-sound-btn" onclick="testNotificationSound()">
+                                <i class="fas fa-play"></i> Test Sound
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3><i class="fas fa-desktop"></i> Browser Notifications</h3>
+                        <div class="setting-item">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="browserNotificationsEnabled" checked>
+                                <span class="slider"></span>
+                            </label>
+                            <div class="setting-info">
+                                <h4>Enable Browser Notifications</h4>
+                                <p>Show desktop notifications for new orders</p>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <button class="test-notification-btn" onclick="testBrowserNotification()">
+                                <i class="fas fa-bell"></i> Test Notification
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3><i class="fas fa-sync"></i> Auto Refresh</h3>
+                        <div class="setting-item">
+                            <label for="refreshInterval">Refresh Interval (seconds)</label>
+                            <select id="refreshInterval" onchange="updateRefreshInterval()">
+                                <option value="5">5 seconds</option>
+                                <option value="10" selected>10 seconds</option>
+                                <option value="15">15 seconds</option>
+                                <option value="30">30 seconds</option>
+                                <option value="60">1 minute</option>
+                            </select>
+                        </div>
+                        <div class="setting-info">
+                            <p>How often to check for new orders</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3><i class="fas fa-info-circle"></i> Notification Status</h3>
+                        <div class="status-info">
+                            <div class="status-item">
+                                <span class="status-label">Sound System:</span>
+                                <span class="status-value" id="soundStatus">Ready</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Browser Permission:</span>
+                                <span class="status-value" id="notificationPermission">Checking...</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Last Order Check:</span>
+                                <span class="status-value" id="lastOrderCheck">Never</span>
+                            </div>
                         </div>
                     </div>
                 </div>

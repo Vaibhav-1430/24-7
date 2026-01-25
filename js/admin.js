@@ -1,10 +1,57 @@
 // Admin Dashboard Functionality
+let lastOrderCount = 0; // Track the number of orders to detect new ones
+let notificationSound = null; // Audio object for notification sound
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🔧 Admin dashboard loading...');
+    
+    // Initialize notification sound
+    initializeNotificationSound();
     
     // Wait for API client to be ready
     setTimeout(initializeAdminDashboard, 1000);
 });
+
+function initializeNotificationSound() {
+    try {
+        // Create audio object with a notification sound
+        // Using a data URL for a simple beep sound
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Create a simple notification sound function
+        window.playNotificationSound = function() {
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+                
+                console.log('🔔 Notification sound played');
+            } catch (error) {
+                console.error('❌ Failed to play notification sound:', error);
+            }
+        };
+        
+        console.log('🔔 Notification sound system initialized');
+    } catch (error) {
+        console.error('❌ Failed to initialize notification sound:', error);
+        // Fallback: use system beep
+        window.playNotificationSound = function() {
+            console.log('🔔 System beep (fallback)');
+        };
+    }
+}
 
 function initializeAdminDashboard() {
     console.log('🔧 Initializing admin dashboard...');
@@ -22,6 +69,23 @@ function initializeAdminDashboard() {
     // Initialize admin dashboard
     setupEventListeners();
     loadDashboardData();
+    
+    // Start automatic order refresh for notifications
+    startOrderRefreshTimer();
+}
+
+function startOrderRefreshTimer() {
+    // Refresh orders every 10 seconds to check for new orders
+    setInterval(() => {
+        // Only refresh if we're on the orders section and the page is visible
+        if (document.querySelector('.menu-item[data-section="orders"]').classList.contains('active') && 
+            document.visibilityState === 'visible') {
+            console.log('🔄 Auto-refreshing orders for new order detection...');
+            loadOrders();
+        }
+    }, 10000); // 10 seconds
+    
+    console.log('🔄 Order refresh timer started (10 second intervals)');
 }
 
 async function checkAdminAuth() {
@@ -116,6 +180,9 @@ function showSection(sectionName) {
                 break;
             case 'analytics':
                 loadAnalytics();
+                break;
+            case 'notifications':
+                loadNotificationSettings();
                 break;
         }
     }
@@ -281,6 +348,9 @@ async function loadOrders() {
         const orders = response?.orders || [];
         console.log('📋 Final orders to display:', orders);
         
+        // Check for new orders and play notification sound
+        checkForNewOrders(orders);
+        
         displayOrders(orders);
     } catch (error) {
         console.error('❌ Failed to load orders:', error);
@@ -298,6 +368,105 @@ async function loadOrders() {
                 </button>
             </div>
         `;
+    }
+}
+
+function checkForNewOrders(orders) {
+    try {
+        const currentOrderCount = orders.length;
+        
+        // Only check for new orders after the first load (avoid notification on page load)
+        if (lastOrderCount > 0 && currentOrderCount > lastOrderCount) {
+            const newOrdersCount = currentOrderCount - lastOrderCount;
+            console.log(`🔔 ${newOrdersCount} new order(s) detected!`);
+            
+            // Play notification sound
+            if (window.playNotificationSound) {
+                window.playNotificationSound();
+            }
+            
+            // Show browser notification if permission granted
+            showBrowserNotification(newOrdersCount, orders);
+            
+            // Flash the page title to get attention
+            flashPageTitle();
+        }
+        
+        // Update the last order count
+        lastOrderCount = currentOrderCount;
+        
+    } catch (error) {
+        console.error('❌ Error checking for new orders:', error);
+    }
+}
+
+function showBrowserNotification(newOrdersCount, orders) {
+    try {
+        // Request notification permission if not already granted
+        if (Notification.permission === 'default') {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    showNotification(newOrdersCount, orders);
+                }
+            });
+        } else if (Notification.permission === 'granted') {
+            showNotification(newOrdersCount, orders);
+        }
+    } catch (error) {
+        console.error('❌ Browser notification error:', error);
+    }
+}
+
+function showNotification(newOrdersCount, orders) {
+    try {
+        const latestOrder = orders[0]; // Assuming orders are sorted by newest first
+        const title = `🍽️ New Order Alert!`;
+        const body = newOrdersCount === 1 
+            ? `New order #${latestOrder.orderNumber || latestOrder.id} received`
+            : `${newOrdersCount} new orders received`;
+        
+        const notification = new Notification(title, {
+            body: body,
+            icon: '/favicon.ico',
+            badge: '/favicon.ico',
+            tag: 'new-order',
+            requireInteraction: true
+        });
+        
+        // Auto close after 5 seconds
+        setTimeout(() => notification.close(), 5000);
+        
+        // Focus window when notification is clicked
+        notification.onclick = function() {
+            window.focus();
+            notification.close();
+        };
+        
+        console.log('🔔 Browser notification shown');
+    } catch (error) {
+        console.error('❌ Failed to show browser notification:', error);
+    }
+}
+
+function flashPageTitle() {
+    try {
+        const originalTitle = document.title;
+        let flashCount = 0;
+        const maxFlashes = 6;
+        
+        const flashInterval = setInterval(() => {
+            document.title = flashCount % 2 === 0 ? '🔔 NEW ORDER!' : originalTitle;
+            flashCount++;
+            
+            if (flashCount >= maxFlashes) {
+                clearInterval(flashInterval);
+                document.title = originalTitle;
+            }
+        }, 500);
+        
+        console.log('🔔 Page title flashing');
+    } catch (error) {
+        console.error('❌ Failed to flash page title:', error);
     }
 }
 
@@ -917,3 +1086,204 @@ window.addEventListener('click', function(e) {
         closeItemModal();
     }
 });
+
+// Notification Settings Functions
+function loadNotificationSettings() {
+    console.log('🔔 Loading notification settings...');
+    
+    // Load saved settings from localStorage
+    const soundEnabled = localStorage.getItem('adminSoundEnabled') !== 'false';
+    const browserNotificationsEnabled = localStorage.getItem('adminBrowserNotificationsEnabled') !== 'false';
+    const refreshInterval = localStorage.getItem('adminRefreshInterval') || '10';
+    
+    // Update UI
+    document.getElementById('soundEnabled').checked = soundEnabled;
+    document.getElementById('browserNotificationsEnabled').checked = browserNotificationsEnabled;
+    document.getElementById('refreshInterval').value = refreshInterval;
+    
+    // Update status indicators
+    updateNotificationStatus();
+    
+    // Setup event listeners for settings
+    setupNotificationEventListeners();
+}
+
+function setupNotificationEventListeners() {
+    // Sound toggle
+    document.getElementById('soundEnabled').addEventListener('change', function() {
+        localStorage.setItem('adminSoundEnabled', this.checked);
+        updateNotificationStatus();
+    });
+    
+    // Browser notifications toggle
+    document.getElementById('browserNotificationsEnabled').addEventListener('change', function() {
+        localStorage.setItem('adminBrowserNotificationsEnabled', this.checked);
+        if (this.checked) {
+            requestNotificationPermission();
+        }
+        updateNotificationStatus();
+    });
+}
+
+function updateNotificationStatus() {
+    // Sound system status
+    const soundStatus = document.getElementById('soundStatus');
+    if (window.playNotificationSound) {
+        soundStatus.textContent = 'Ready';
+        soundStatus.className = 'status-value ready';
+    } else {
+        soundStatus.textContent = 'Error';
+        soundStatus.className = 'status-value error';
+    }
+    
+    // Browser notification permission
+    const permissionStatus = document.getElementById('notificationPermission');
+    if (Notification.permission === 'granted') {
+        permissionStatus.textContent = 'Granted';
+        permissionStatus.className = 'status-value ready';
+    } else if (Notification.permission === 'denied') {
+        permissionStatus.textContent = 'Denied';
+        permissionStatus.className = 'status-value error';
+    } else {
+        permissionStatus.textContent = 'Not Requested';
+        permissionStatus.className = 'status-value warning';
+    }
+    
+    // Last order check
+    const lastCheck = document.getElementById('lastOrderCheck');
+    const now = new Date();
+    lastCheck.textContent = now.toLocaleTimeString();
+}
+
+function requestNotificationPermission() {
+    if (Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+            updateNotificationStatus();
+            if (permission === 'granted') {
+                showTestNotification('Permission granted! Notifications are now enabled.');
+            }
+        });
+    }
+}
+
+function testNotificationSound() {
+    console.log('🔔 Testing notification sound...');
+    if (window.playNotificationSound) {
+        window.playNotificationSound();
+    } else {
+        alert('Sound system not available');
+    }
+}
+
+function testBrowserNotification() {
+    console.log('🔔 Testing browser notification...');
+    if (Notification.permission === 'granted') {
+        showTestNotification('This is a test notification from 24x7 Cafe Admin!');
+    } else if (Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                showTestNotification('Permission granted! This is a test notification.');
+            } else {
+                alert('Notification permission denied');
+            }
+            updateNotificationStatus();
+        });
+    } else {
+        alert('Notification permission denied. Please enable notifications in your browser settings.');
+    }
+}
+
+function showTestNotification(message) {
+    try {
+        const notification = new Notification('🍽️ 24x7 Cafe Admin', {
+            body: message,
+            icon: '/favicon.ico',
+            badge: '/favicon.ico',
+            tag: 'test-notification'
+        });
+        
+        setTimeout(() => notification.close(), 3000);
+        
+        notification.onclick = function() {
+            window.focus();
+            notification.close();
+        };
+    } catch (error) {
+        console.error('❌ Failed to show test notification:', error);
+        alert('Failed to show notification: ' + error.message);
+    }
+}
+
+function updateRefreshInterval() {
+    const interval = document.getElementById('refreshInterval').value;
+    localStorage.setItem('adminRefreshInterval', interval);
+    
+    // Restart the refresh timer with new interval
+    if (window.orderRefreshTimer) {
+        clearInterval(window.orderRefreshTimer);
+    }
+    
+    startOrderRefreshTimer();
+    
+    alert(`Order refresh interval updated to ${interval} seconds`);
+}
+
+// Enhanced order refresh timer with configurable interval
+function startOrderRefreshTimer() {
+    const interval = parseInt(localStorage.getItem('adminRefreshInterval') || '10') * 1000;
+    
+    window.orderRefreshTimer = setInterval(() => {
+        // Only refresh if we're on the orders section and the page is visible
+        if (document.querySelector('.menu-item[data-section="orders"]').classList.contains('active') && 
+            document.visibilityState === 'visible') {
+            console.log('🔄 Auto-refreshing orders for new order detection...');
+            loadOrders();
+            
+            // Update last check time if on notifications page
+            if (document.querySelector('.menu-item[data-section="notifications"]').classList.contains('active')) {
+                updateNotificationStatus();
+            }
+        }
+    }, interval);
+    
+    console.log(`🔄 Order refresh timer started (${interval/1000} second intervals)`);
+}
+
+// Enhanced checkForNewOrders with settings
+function checkForNewOrders(orders) {
+    try {
+        const currentOrderCount = orders.length;
+        
+        // Only check for new orders after the first load (avoid notification on page load)
+        if (lastOrderCount > 0 && currentOrderCount > lastOrderCount) {
+            const newOrdersCount = currentOrderCount - lastOrderCount;
+            console.log(`🔔 ${newOrdersCount} new order(s) detected!`);
+            
+            // Check if sound is enabled
+            const soundEnabled = localStorage.getItem('adminSoundEnabled') !== 'false';
+            if (soundEnabled && window.playNotificationSound) {
+                window.playNotificationSound();
+            }
+            
+            // Check if browser notifications are enabled
+            const browserNotificationsEnabled = localStorage.getItem('adminBrowserNotificationsEnabled') !== 'false';
+            if (browserNotificationsEnabled) {
+                showBrowserNotification(newOrdersCount, orders);
+            }
+            
+            // Flash the page title to get attention
+            flashPageTitle();
+        }
+        
+        // Update the last order count
+        lastOrderCount = currentOrderCount;
+        
+    } catch (error) {
+        console.error('❌ Error checking for new orders:', error);
+    }
+}
+
+// Make functions globally available
+window.testNotificationSound = testNotificationSound;
+window.testBrowserNotification = testBrowserNotification;
+window.updateRefreshInterval = updateRefreshInterval;
