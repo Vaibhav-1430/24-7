@@ -153,9 +153,13 @@ exports.handler = async (event, context) => {
 
         if (event.httpMethod === 'GET') {
             // Get all menu items for admin
+            console.log('🔍 Admin: Fetching all menu items...');
+            
             const menuItems = await MenuItem.find({})
                 .sort({ category: 1, name: 1 })
                 .lean();
+
+            console.log(`🔍 Admin: Found ${menuItems.length} menu items in database`);
 
             // Transform data to match admin interface expectations
             const transformedItems = menuItems.map(item => ({
@@ -174,12 +178,15 @@ exports.handler = async (event, context) => {
                 updatedAt: item.updatedAt
             }));
 
+            console.log(`✅ Admin: Returning ${transformedItems.length} transformed menu items`);
+
             return {
                 statusCode: 200,
                 headers,
                 body: JSON.stringify({
                     success: true,
-                    menuItems: transformedItems
+                    menuItems: transformedItems,
+                    count: transformedItems.length
                 })
             };
         }

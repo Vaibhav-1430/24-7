@@ -130,9 +130,13 @@ async function loadMenuItems() {
         // Test the API endpoint directly
         const response = await apiClient.getAdminMenuItems();
         console.log('📡 API Response:', response);
+        console.log('📡 Response type:', typeof response);
+        console.log('📡 Response keys:', Object.keys(response || {}));
         
         const menuItems = response?.menuItems || [];
         console.log('🍽️ Menu items received:', menuItems);
+        console.log('🍽️ Menu items count:', menuItems.length);
+        console.log('🍽️ First menu item:', menuItems[0]);
         
         currentMenuItems = menuItems; // Store for editing
         displayMenuItems(menuItems);
@@ -401,7 +405,10 @@ async function loadMenuItems() {
 function displayMenuItems(menuItems) {
     const menuItemsGrid = document.getElementById('menuItemsGrid');
     
-    if (menuItems.length === 0) {
+    console.log('🎨 Displaying menu items:', menuItems);
+    console.log('🎨 Menu items length:', menuItems?.length);
+    
+    if (!menuItems || menuItems.length === 0) {
         menuItemsGrid.innerHTML = `
             <div style="text-align: center; padding: 40px; color: #666; grid-column: 1 / -1;">
                 <i class="fas fa-utensils" style="font-size: 3rem; margin-bottom: 15px; color: #e74c3c;"></i>
@@ -410,6 +417,15 @@ function displayMenuItems(menuItems) {
                 <button onclick="openAddItemModal()" style="margin-top: 15px; background: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
                     <i class="fas fa-plus"></i> Add Your First Item
                 </button>
+                <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: left;">
+                    <h4 style="color: #333; margin-bottom: 10px;">Troubleshooting:</h4>
+                    <p style="font-size: 0.9rem; color: #666; margin: 5px 0;">• Check browser console for errors</p>
+                    <p style="font-size: 0.9rem; color: #666; margin: 5px 0;">• Try refreshing the page</p>
+                    <p style="font-size: 0.9rem; color: #666; margin: 5px 0;">• Ensure you have admin privileges</p>
+                    <button onclick="loadMenuItems()" style="margin-top: 10px; background: #3498db; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                        <i class="fas fa-refresh"></i> Reload Menu Items
+                    </button>
+                </div>
             </div>
         `;
         return;

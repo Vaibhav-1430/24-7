@@ -483,7 +483,8 @@ class APIClient {
         const response = await this.request('/admin-menu');
         console.log('📡 API: Admin menu response:', response);
         
-        return response.data || [];
+        // Return the full response so admin.js can access response.menuItems
+        return response;
     }
 
     async addMenuItem(itemData) {
