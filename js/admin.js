@@ -707,18 +707,12 @@ window.testOrdersAPI = async function() {
     try {
         console.log('🧪 Testing orders API...');
         
-        // Test the test endpoint first
-        const testResponse = await fetch('/.netlify/functions/test-admin-orders');
-        const testData = await testResponse.json();
-        console.log('🧪 Test endpoint result:', testData);
-        
         // Test the actual admin orders endpoint
         const adminResponse = await apiClient.getAdminOrders();
         console.log('🧪 Admin orders result:', adminResponse);
         
         alert(`Orders API Test Results:
         
-Test Endpoint: ${testData.count} orders found
 Admin Endpoint: ${adminResponse?.orders?.length || 0} orders found
 
 Check browser console for detailed logs.`);
@@ -726,6 +720,33 @@ Check browser console for detailed logs.`);
     } catch (error) {
         console.error('🧪 Orders API test failed:', error);
         alert(`Orders API Test Failed: ${error.message}`);
+    }
+};
+
+// Test function for debugging dashboard API
+window.testDashboardAPI = async function() {
+    try {
+        console.log('🧪 Testing dashboard API...');
+        
+        // Test the analytics endpoint
+        const analyticsResponse = await apiClient.getAdminAnalytics(30);
+        console.log('🧪 Analytics result:', analyticsResponse);
+        
+        const analytics = analyticsResponse?.analytics;
+        console.log('🧪 Dashboard data:', analytics?.dashboard);
+        
+        alert(`Dashboard API Test Results:
+        
+Today's Orders: ${analytics?.dashboard?.todayOrders || 0}
+Today's Revenue: ₹${analytics?.dashboard?.todayRevenue || 0}
+Pending Orders: ${analytics?.dashboard?.pendingOrders || 0}
+Menu Items: ${analytics?.dashboard?.totalMenuItems || 0}
+
+Check browser console for detailed logs.`);
+        
+    } catch (error) {
+        console.error('🧪 Dashboard API test failed:', error);
+        alert(`Dashboard API Test Failed: ${error.message}`);
     }
 };
 

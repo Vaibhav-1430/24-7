@@ -480,8 +480,14 @@ class APIClient {
     }
 
     async getAdminAnalytics(days = 30) {
+        console.log('📊 API: Getting admin analytics...');
+        console.log('📊 API: Days:', days);
+        
         const response = await this.request(`/admin-analytics?days=${days}`);
-        return response.data;
+        console.log('📊 API: Analytics response:', response);
+        
+        // Return the full response so admin.js can access response.analytics
+        return response;
     }
 
     async getAdminMenuItems() {

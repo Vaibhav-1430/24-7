@@ -48,25 +48,25 @@ const orderSchema = new mongoose.Schema({
     },
     status: { 
         type: String, 
-        enum: ['received', 'preparing', 'ready', 'out_for_delivery', 'delivered', 'cancelled'], 
-        default: 'received' 
+        enum: ['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled'], 
+        default: 'pending' 
     },
     orderTime: { type: Date, default: Date.now },
     estimatedDelivery: { type: Date }
 }, { timestamps: true });
 
-// Menu Item Schema
+// Menu Item Schema - matching the actual menu items
 const menuItemSchema = new mongoose.Schema({
-    id: { type: Number, required: true, unique: true },
-    name: { type: String, required: true },
-    description: { type: String, required: true },
-    price: { type: Number, required: true, min: 0 },
+    name: { type: String, required: true, trim: true },
+    description: { type: String, required: true, trim: true },
+    category: { type: String, required: true, trim: true },
+    fullPrice: { type: Number, required: true, min: 0 },
     halfPrice: { type: Number, min: 0 },
-    category: { type: String, required: true },
-    image: { type: String, default: 'images/placeholder.jpg' },
+    image: { type: String, default: 'images/default-food.jpg' },
     available: { type: Boolean, default: true },
     popular: { type: Boolean, default: false },
-    isVeg: { type: Boolean, default: true }
+    isVeg: { type: Boolean, default: true },
+    spiceLevel: { type: String, enum: ['Mild', 'Medium', 'Spicy'], default: 'Medium' }
 }, { timestamps: true });
 
 // Global connection cache
@@ -83,8 +83,12 @@ const connectDB = async () => {
     try {
         const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://cafe24x7:cafe24x7password@cluster0.4kxqj.mongodb.net/cafe24x7?retryWrites=true&w=majority';
         
+        // Completely disconnect and clear models if connection exists
         if (mongoose.connection.readyState !== 0) {
             await mongoose.disconnect();
+            // Clear all models
+            mongoose.models = {};
+            mongoose.modelSchemas = {};
         }
 
         const connection = await mongoose.connect(mongoUri, {
@@ -105,7 +109,7 @@ const connectDB = async () => {
             try {
                 Order = mongoose.model('Order');
             } catch {
-                Order = mongoose.model('Order', orderSchema);
+                Order = mongoose.model('Order', orderSchema, 'orders');
             }
         }
 
@@ -118,10 +122,10 @@ const connectDB = async () => {
         }
 
         cachedConnection = connection;
-        console.log('✅ Connected to MongoDB Atlas');
+        console.log('✅ Analytics: Connected to MongoDB Atlas');
         return connection;
     } catch (error) {
-        console.error('❌ MongoDB connection failed:', error.message);
+        console.error('❌ Analytics: MongoDB connection failed:', error.message);
         throw error;
     }
 };
@@ -220,15 +224,21 @@ exports.handler = async (event, context) => {
             createdAt: { $gte: today, $lt: tomorrow }
         }).lean();
 
-        const todayRevenue = todayOrders.reduce((sum, order) => sum + (order.pricing?.total || 0), 0);
+        console.log(`📊 Analytics: Found ${todayOrders.length} orders today`);
+        console.log('📊 Analytics: Today date range:', { today, tomorrow });
 
-        // Pending orders
+        const todayRevenue = todayOrders.reduce((sum, order) => sum + (order.pricing?.total || 0), 0);
+        console.log(`📊 Analytics: Today's revenue: ₹${todayRevenue}`);
+
+        // Pending orders (using correct status values)
         const pendingOrders = await Order.countDocuments({
-            status: { $in: ['received', 'preparing', 'ready'] }
+            status: { $in: ['pending', 'confirmed', 'preparing', 'ready'] }
         });
+        console.log(`📊 Analytics: Pending orders: ${pendingOrders}`);
 
         // Total menu items
         const totalMenuItems = await MenuItem.countDocuments({});
+        console.log(`📊 Analytics: Total menu items: ${totalMenuItems}`);
 
         // Popular items analysis
         const popularItemsAggregation = await Order.aggregate([
