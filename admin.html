@@ -311,6 +311,32 @@
                                 <span class="status-label">Last Order Check:</span>
                                 <span class="status-value" id="lastOrderCheck">Never</span>
                             </div>
+                            <div class="status-item">
+                                <span class="status-label">Current Order Count:</span>
+                                <span class="status-value" id="currentOrderCount">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3><i class="fas fa-bug"></i> Debug & Testing</h3>
+                        <div class="setting-item">
+                            <button class="test-sound-btn" onclick="simulateNewOrder()">
+                                <i class="fas fa-plus"></i> Simulate New Order
+                            </button>
+                            <div class="setting-info">
+                                <h4>Test New Order Alert</h4>
+                                <p>Manually trigger the new order notification system</p>
+                            </div>
+                        </div>
+                        <div class="setting-item">
+                            <button class="test-notification-btn" onclick="forceRefreshOrders()">
+                                <i class="fas fa-sync"></i> Force Refresh Orders
+                            </button>
+                            <div class="setting-info">
+                                <h4>Manual Order Refresh</h4>
+                                <p>Manually check for new orders right now</p>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -70,8 +70,15 @@ function initializeAdminDashboard() {
     setupEventListeners();
     loadDashboardData();
     
-    // Start automatic order refresh for notifications
+    // Start automatic order refresh for notifications immediately
     startOrderRefreshTimer();
+    
+    // Initialize notification status
+    setTimeout(() => {
+        if (document.getElementById('soundStatus')) {
+            updateNotificationStatus();
+        }
+    }, 1000);
 }
 
 function startOrderRefreshTimer() {
@@ -347,6 +354,8 @@ async function loadOrders() {
         
         const orders = response?.orders || [];
         console.log('📋 Final orders to display:', orders);
+        console.log('📋 Previous order count:', lastOrderCount);
+        console.log('📋 Current order count:', orders.length);
         
         // Check for new orders and play notification sound
         checkForNewOrders(orders);
@@ -368,105 +377,6 @@ async function loadOrders() {
                 </button>
             </div>
         `;
-    }
-}
-
-function checkForNewOrders(orders) {
-    try {
-        const currentOrderCount = orders.length;
-        
-        // Only check for new orders after the first load (avoid notification on page load)
-        if (lastOrderCount > 0 && currentOrderCount > lastOrderCount) {
-            const newOrdersCount = currentOrderCount - lastOrderCount;
-            console.log(`🔔 ${newOrdersCount} new order(s) detected!`);
-            
-            // Play notification sound
-            if (window.playNotificationSound) {
-                window.playNotificationSound();
-            }
-            
-            // Show browser notification if permission granted
-            showBrowserNotification(newOrdersCount, orders);
-            
-            // Flash the page title to get attention
-            flashPageTitle();
-        }
-        
-        // Update the last order count
-        lastOrderCount = currentOrderCount;
-        
-    } catch (error) {
-        console.error('❌ Error checking for new orders:', error);
-    }
-}
-
-function showBrowserNotification(newOrdersCount, orders) {
-    try {
-        // Request notification permission if not already granted
-        if (Notification.permission === 'default') {
-            Notification.requestPermission().then(permission => {
-                if (permission === 'granted') {
-                    showNotification(newOrdersCount, orders);
-                }
-            });
-        } else if (Notification.permission === 'granted') {
-            showNotification(newOrdersCount, orders);
-        }
-    } catch (error) {
-        console.error('❌ Browser notification error:', error);
-    }
-}
-
-function showNotification(newOrdersCount, orders) {
-    try {
-        const latestOrder = orders[0]; // Assuming orders are sorted by newest first
-        const title = `🍽️ New Order Alert!`;
-        const body = newOrdersCount === 1 
-            ? `New order #${latestOrder.orderNumber || latestOrder.id} received`
-            : `${newOrdersCount} new orders received`;
-        
-        const notification = new Notification(title, {
-            body: body,
-            icon: '/favicon.ico',
-            badge: '/favicon.ico',
-            tag: 'new-order',
-            requireInteraction: true
-        });
-        
-        // Auto close after 5 seconds
-        setTimeout(() => notification.close(), 5000);
-        
-        // Focus window when notification is clicked
-        notification.onclick = function() {
-            window.focus();
-            notification.close();
-        };
-        
-        console.log('🔔 Browser notification shown');
-    } catch (error) {
-        console.error('❌ Failed to show browser notification:', error);
-    }
-}
-
-function flashPageTitle() {
-    try {
-        const originalTitle = document.title;
-        let flashCount = 0;
-        const maxFlashes = 6;
-        
-        const flashInterval = setInterval(() => {
-            document.title = flashCount % 2 === 0 ? '🔔 NEW ORDER!' : originalTitle;
-            flashCount++;
-            
-            if (flashCount >= maxFlashes) {
-                clearInterval(flashInterval);
-                document.title = originalTitle;
-            }
-        }, 500);
-        
-        console.log('🔔 Page title flashing');
-    } catch (error) {
-        console.error('❌ Failed to flash page title:', error);
     }
 }
 
@@ -1153,6 +1063,12 @@ function updateNotificationStatus() {
     const lastCheck = document.getElementById('lastOrderCheck');
     const now = new Date();
     lastCheck.textContent = now.toLocaleTimeString();
+    
+    // Current order count
+    const orderCountEl = document.getElementById('currentOrderCount');
+    if (orderCountEl) {
+        orderCountEl.textContent = lastOrderCount;
+    }
 }
 
 function requestNotificationPermission() {
@@ -1232,21 +1148,32 @@ function updateRefreshInterval() {
 function startOrderRefreshTimer() {
     const interval = parseInt(localStorage.getItem('adminRefreshInterval') || '10') * 1000;
     
+    // Clear any existing timer
+    if (window.orderRefreshTimer) {
+        clearInterval(window.orderRefreshTimer);
+    }
+    
     window.orderRefreshTimer = setInterval(() => {
-        // Only refresh if we're on the orders section and the page is visible
-        if (document.querySelector('.menu-item[data-section="orders"]').classList.contains('active') && 
-            document.visibilityState === 'visible') {
+        // Always check for new orders when admin portal is open and visible
+        const pageVisible = document.visibilityState === 'visible';
+        const isAdminPage = window.location.pathname.includes('admin.html') || window.location.pathname.includes('admin');
+        
+        console.log('🔄 Timer check:', { pageVisible, isAdminPage, interval: interval/1000 + 's' });
+        
+        if (pageVisible && isAdminPage) {
             console.log('🔄 Auto-refreshing orders for new order detection...');
             loadOrders();
             
-            // Update last check time if on notifications page
-            if (document.querySelector('.menu-item[data-section="notifications"]').classList.contains('active')) {
+            // Update notification status if on notifications page
+            const notificationsActive = document.querySelector('.menu-item[data-section="notifications"]')?.classList.contains('active');
+            if (notificationsActive) {
                 updateNotificationStatus();
             }
         }
     }, interval);
     
     console.log(`🔄 Order refresh timer started (${interval/1000} second intervals)`);
+    console.log('🔔 Notification system is now active and monitoring for new orders!');
 }
 
 // Enhanced checkForNewOrders with settings
@@ -1287,3 +1214,39 @@ function checkForNewOrders(orders) {
 window.testNotificationSound = testNotificationSound;
 window.testBrowserNotification = testBrowserNotification;
 window.updateRefreshInterval = updateRefreshInterval;
+
+// Debug and testing functions
+window.simulateNewOrder = function() {
+    console.log('🧪 Simulating new order notification...');
+    
+    // Temporarily increase the order count to trigger notification
+    const originalCount = lastOrderCount;
+    lastOrderCount = lastOrderCount - 1; // Decrease by 1 so next check will detect "new" order
+    
+    // Create a fake order for testing
+    const fakeOrders = [{
+        id: 'test-' + Date.now(),
+        orderNumber: 'TEST' + Math.floor(Math.random() * 1000),
+        status: 'pending',
+        orderTime: new Date().toISOString()
+    }];
+    
+    // Add existing order count
+    for (let i = 0; i < originalCount; i++) {
+        fakeOrders.push({ id: 'existing-' + i });
+    }
+    
+    console.log('🧪 Fake orders:', fakeOrders);
+    console.log('🧪 Previous count:', lastOrderCount, 'New count:', fakeOrders.length);
+    
+    // Trigger the notification check
+    checkForNewOrders(fakeOrders);
+    
+    alert('Simulated new order notification! Check console for details.');
+};
+
+window.forceRefreshOrders = function() {
+    console.log('🔄 Force refreshing orders...');
+    loadOrders();
+    alert('Orders refreshed! Check console for details.');
+};
