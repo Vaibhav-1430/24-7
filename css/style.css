@@ -716,6 +716,150 @@ body {
     }
 }
 
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 15% auto;
+    padding: 0;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    position: relative;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modal .close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    color: #999;
+    font-size: 28px;
+    font-weight: 300;
+    cursor: pointer;
+    z-index: 1;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s;
+}
+
+.modal .close:hover {
+    color: #333;
+    background: rgba(0, 0, 0, 0.1);
+    transform: rotate(90deg);
+}
+
+.modal-header {
+    padding: 25px 30px 20px;
+    border-bottom: 1px solid #f0f0f0;
+    background: linear-gradient(135deg, #f8f9fa, #ffffff);
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.modal-header p {
+    margin: 5px 0 0 0;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.modal-body {
+    padding: 25px 30px;
+}
+
+.price-options {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.price-option {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.price-option:hover {
+    border-color: #e74c3c;
+    background: #fdf2f2;
+}
+
+.price-option input[type="radio"] {
+    margin-right: 12px;
+    transform: scale(1.2);
+}
+
+.price-option input[type="radio"]:checked + span {
+    color: #e74c3c;
+    font-weight: 600;
+}
+
+.price-option span {
+    font-size: 1rem;
+    color: #333;
+}
+
+.modal-footer {
+    padding: 20px 30px 30px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+}
+
+.add-to-cart-confirm {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    min-width: 120px;
+}
+
+.add-to-cart-confirm:hover {
+    background: #c0392b;
+    transform: translateY(-2px);
+}
+
 /* Modal Responsive */
 @media (max-width: 768px) {
     .modal-content {

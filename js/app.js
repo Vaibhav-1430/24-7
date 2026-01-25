@@ -720,80 +720,149 @@ const SAMPLE_MENU_ITEMS = [
     }
 ];
 
-// Load popular items on home page
-function loadPopularItems() {
+// Load popular items on home page from API
+async function loadPopularItems() {
     const popularItemsContainer = document.getElementById('popularItems');
     if (!popularItemsContainer) return;
 
-    const popularItems = SAMPLE_MENU_ITEMS.filter(item => item.popular && item.available && !item.onMRP);
-    
-    popularItemsContainer.innerHTML = popularItems.map(item => `
-        <div class="item-card">
-            <div class="item-image">
-                <img src="${item.image}" alt="${item.name}" onerror="this.src='images/placeholder.jpg'">
+    try {
+        console.log('🏠 Loading popular items from API...');
+        
+        // Show loading state
+        popularItemsContainer.innerHTML = `
+            <div style="text-align: center; padding: 40px; grid-column: 1 / -1;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #e74c3c;"></i>
+                <p style="margin-top: 10px; color: #666;">Loading popular items...</p>
             </div>
-            <div class="item-info">
-                <div class="item-name">${item.name}</div>
-                <div class="item-description">${item.description}</div>
-                <div class="item-price">
-                    ${item.hasHalf ? 
-                        `Full: ${APP_CONFIG.currency}${item.price} | Half: ${APP_CONFIG.currency}${item.halfPrice}` : 
-                        `${APP_CONFIG.currency}${item.price}`
-                    }
+        `;
+
+        // Load menu items from API
+        const response = await fetch('/.netlify/functions/menu');
+        const data = await response.json();
+        
+        console.log('🏠 Menu API response:', data);
+        
+        if (data.success && data.data) {
+            // Filter for popular items
+            const popularItems = data.data.filter(item => item.popular && item.available);
+            console.log('🏠 Popular items found:', popularItems.length);
+            
+            if (popularItems.length === 0) {
+                popularItemsContainer.innerHTML = `
+                    <div style="text-align: center; padding: 40px; grid-column: 1 / -1;">
+                        <i class="fas fa-star" style="font-size: 2rem; color: #f39c12;"></i>
+                        <p style="margin-top: 10px; color: #666;">No popular items available right now.</p>
+                        <a href="menu.html" style="color: #e74c3c; text-decoration: none; font-weight: 600;">View Full Menu →</a>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Display popular items
+            popularItemsContainer.innerHTML = popularItems.map(item => `
+                <div class="item-card">
+                    <div class="item-image">
+                        <img src="${item.image || 'images/placeholder.jpg'}" alt="${item.name}" onerror="this.src='images/placeholder.jpg'">
+                    </div>
+                    <div class="item-info">
+                        <div class="item-name">${item.name}</div>
+                        <div class="item-description">${item.description}</div>
+                        <div class="item-price">
+                            ${item.halfPrice ? 
+                                `Full: ₹${item.price} | Half: ₹${item.halfPrice}` : 
+                                `₹${item.price}`
+                            }
+                        </div>
+                        <button class="add-to-cart" onclick="quickAddToCart('${item.id}', '${item.name}', ${item.price}, ${item.halfPrice || 0}, ${item.halfPrice ? true : false})">
+                            Add to Cart
+                        </button>
+                    </div>
                 </div>
-                <button class="add-to-cart" onclick="quickAddToCart(${item.id})">
-                    Add to Cart
+            `).join('');
+        } else {
+            throw new Error('Failed to load menu items');
+        }
+    } catch (error) {
+        console.error('❌ Failed to load popular items:', error);
+        popularItemsContainer.innerHTML = `
+            <div style="text-align: center; padding: 40px; grid-column: 1 / -1;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #e74c3c;"></i>
+                <p style="margin-top: 10px; color: #666;">Failed to load popular items.</p>
+                <button onclick="loadPopularItems()" style="background: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px;">
+                    Try Again
                 </button>
             </div>
-        </div>
-    `).join('');
+        `;
+    }
 }
 
 // Quick add to cart function for home page
-function quickAddToCart(itemId) {
-    const item = SAMPLE_MENU_ITEMS.find(item => item.id === itemId);
-    if (item && item.available && !item.onMRP) {
-        if (item.hasHalf) {
-            // Show modal for full/half selection
-            showQuickAddModal(item);
-        } else {
-            // Direct add for items without half option
-            cartManagerClean.addItem({
-                id: item.id,
-                name: item.name,
-                price: item.price,
-                quantity: 1,
-                instructions: ''
-            });
-        }
+function quickAddToCart(itemId, itemName, fullPrice, halfPrice, hasHalf) {
+    console.log('🛒 Quick add to cart:', { itemId, itemName, fullPrice, halfPrice, hasHalf });
+    
+    // Check if user is logged in
+    if (!authManagerClean.isLoggedIn()) {
+        alert('Please login first to add items to cart');
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    if (hasHalf && halfPrice > 0) {
+        // Show modal for full/half selection
+        showQuickAddModal(itemId, itemName, fullPrice, halfPrice);
+    } else {
+        // Direct add for items without half option
+        addItemToCart(itemId, itemName, fullPrice, 1, '');
+    }
+}
+
+// Add item to cart using the cart manager
+async function addItemToCart(itemId, itemName, price, quantity, instructions) {
+    try {
+        console.log('🛒 Adding item to cart:', { itemId, itemName, price, quantity });
+        
+        await cartManagerClean.addItem({
+            menuItemId: itemId,
+            name: itemName,
+            price: price,
+            quantity: quantity,
+            instructions: instructions
+        });
+        
+        // Show success message
+        showSuccess(`${itemName} added to cart!`);
+        
+    } catch (error) {
+        console.error('❌ Failed to add item to cart:', error);
+        showError('Failed to add item to cart. Please try again.');
     }
 }
 
 // Show quick add modal for full/half selection on home page
-function showQuickAddModal(item) {
+function showQuickAddModal(itemId, itemName, fullPrice, halfPrice) {
     // Create modal HTML
     const modalHTML = `
         <div class="modal" id="quickAddModal" style="display: block;">
             <div class="modal-content" style="max-width: 400px;">
                 <span class="close" onclick="closeQuickAddModal()">&times;</span>
                 <div class="modal-header">
-                    <h3>${item.name}</h3>
+                    <h3>${itemName}</h3>
                     <p>Choose your portion size</p>
                 </div>
                 <div class="modal-body">
                     <div class="price-options">
                         <label class="price-option">
-                            <input type="radio" name="quickPriceOption" value="full" checked>
-                            <span>Full Plate - ${APP_CONFIG.currency}${item.price}</span>
+                            <input type="radio" name="quickPriceOption" value="full" data-price="${fullPrice}" checked>
+                            <span>Full Plate - ₹${fullPrice}</span>
                         </label>
                         <label class="price-option">
-                            <input type="radio" name="quickPriceOption" value="half">
-                            <span>Half Plate - ${APP_CONFIG.currency}${item.halfPrice}</span>
+                            <input type="radio" name="quickPriceOption" value="half" data-price="${halfPrice}">
+                            <span>Half Plate - ₹${halfPrice}</span>
                         </label>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="add-to-cart-confirm" onclick="confirmQuickAdd(${item.id})">
+                    <button class="add-to-cart-confirm" onclick="confirmQuickAdd('${itemId}', '${itemName}')">
                         Add to Cart
                     </button>
                 </div>
@@ -806,22 +875,15 @@ function showQuickAddModal(item) {
 }
 
 // Confirm quick add from home page
-function confirmQuickAdd(itemId) {
-    const item = SAMPLE_MENU_ITEMS.find(item => item.id === itemId);
+function confirmQuickAdd(itemId, itemName) {
     const selectedOption = document.querySelector('input[name="quickPriceOption"]:checked');
     
-    if (item && selectedOption) {
+    if (selectedOption) {
+        const price = parseInt(selectedOption.dataset.price);
         const isHalf = selectedOption.value === 'half';
-        const price = isHalf ? item.halfPrice : item.price;
         const sizeName = isHalf ? ' (Half)' : ' (Full)';
         
-        cartManagerClean.addItem({
-            id: item.id,
-            name: item.name + sizeName,
-            price: price,
-            quantity: 1,
-            instructions: ''
-        });
+        addItemToCart(itemId, itemName + sizeName, price, 1, '');
     }
     
     closeQuickAddModal();
