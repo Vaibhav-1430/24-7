@@ -242,7 +242,112 @@ body {
     line-height: 1.6;
 }
 
-/* Popular Items */
+/* How It Works Section */
+.how-it-works {
+    padding: 80px 20px;
+    background: #f8f9fa;
+}
+
+.how-it-works h2 {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.section-subtitle {
+    text-align: center;
+    font-size: 1.1rem;
+    color: #666;
+    margin-bottom: 60px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.steps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 40px;
+    margin-bottom: 50px;
+}
+
+.step-card {
+    background: white;
+    border-radius: 15px;
+    padding: 30px 25px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.step-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.step-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #e74c3c, #f39c12);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.step-card:hover::before {
+    transform: scaleX(1);
+}
+
+.step-number {
+    position: absolute;
+    top: -15px;
+    right: 20px;
+    background: linear-gradient(135deg, #e74c3c, #f39c12);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
+}
+
+.step-icon {
+    margin-bottom: 20px;
+}
+
+.step-icon i {
+    font-size: 3rem;
+    color: #e74c3c;
+    background: linear-gradient(135deg, #e74c3c, #f39c12);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.step-card h3 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.step-card p {
+    color: #666;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+/* Popular Items (keeping for backward compatibility) */
 .popular-items {
     padding: 80px 20px;
     background: #f8f9fa;
@@ -447,6 +552,50 @@ body {
     .items-grid {
         grid-template-columns: 1fr;
     }
+
+    /* How It Works Responsive */
+    .how-it-works {
+        padding: 60px 20px;
+    }
+
+    .how-it-works h2 {
+        font-size: 2rem;
+    }
+
+    .section-subtitle {
+        font-size: 1rem;
+        margin-bottom: 40px;
+    }
+
+    .steps-grid {
+        grid-template-columns: 1fr;
+        gap: 30px;
+        margin-bottom: 40px;
+    }
+
+    .step-card {
+        padding: 25px 20px;
+    }
+
+    .step-number {
+        top: -12px;
+        right: 15px;
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+
+    .step-icon i {
+        font-size: 2.5rem;
+    }
+
+    .step-card h3 {
+        font-size: 1.2rem;
+    }
+
+    .step-card p {
+        font-size: 0.9rem;
+    }
 }
 
 @media (max-width: 480px) {
@@ -462,6 +611,52 @@ body {
     .features h2,
     .popular-items h2 {
         font-size: 2rem;
+    }
+
+    /* How It Works Mobile */
+    .how-it-works h2 {
+        font-size: 1.8rem;
+    }
+
+    .section-subtitle {
+        font-size: 0.95rem;
+        padding: 0 10px;
+    }
+
+    .steps-grid {
+        gap: 25px;
+    }
+
+    .step-card {
+        padding: 20px 15px;
+        margin: 0 10px;
+    }
+
+    .step-number {
+        top: -10px;
+        right: 10px;
+        width: 30px;
+        height: 30px;
+        font-size: 0.9rem;
+    }
+
+    .step-icon i {
+        font-size: 2rem;
+    }
+
+    .step-card h3 {
+        font-size: 1.1rem;
+        margin-bottom: 12px;
+    }
+
+    .step-card p {
+        font-size: 0.85rem;
+        line-height: 1.5;
+    }
+
+    .cta-button {
+        padding: 12px 30px;
+        font-size: 1rem;
     }
 }
 

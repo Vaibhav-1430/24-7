@@ -720,82 +720,6 @@ const SAMPLE_MENU_ITEMS = [
     }
 ];
 
-// Load popular items on home page from API
-async function loadPopularItems() {
-    const popularItemsContainer = document.getElementById('popularItems');
-    if (!popularItemsContainer) return;
-
-    try {
-        console.log('🏠 Loading popular items from API...');
-        
-        // Show loading state
-        popularItemsContainer.innerHTML = `
-            <div style="text-align: center; padding: 40px; grid-column: 1 / -1;">
-                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #e74c3c;"></i>
-                <p style="margin-top: 10px; color: #666;">Loading popular items...</p>
-            </div>
-        `;
-
-        // Load menu items from API
-        const response = await fetch('/.netlify/functions/menu');
-        const data = await response.json();
-        
-        console.log('🏠 Menu API response:', data);
-        
-        if (data.success && data.data) {
-            // Filter for popular items
-            const popularItems = data.data.filter(item => item.popular && item.available);
-            console.log('🏠 Popular items found:', popularItems.length);
-            
-            if (popularItems.length === 0) {
-                popularItemsContainer.innerHTML = `
-                    <div style="text-align: center; padding: 40px; grid-column: 1 / -1;">
-                        <i class="fas fa-star" style="font-size: 2rem; color: #f39c12;"></i>
-                        <p style="margin-top: 10px; color: #666;">No popular items available right now.</p>
-                        <a href="menu.html" style="color: #e74c3c; text-decoration: none; font-weight: 600;">View Full Menu →</a>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Display popular items
-            popularItemsContainer.innerHTML = popularItems.map(item => `
-                <div class="item-card">
-                    <div class="item-image">
-                        <img src="${item.image || 'images/placeholder.jpg'}" alt="${item.name}" onerror="this.src='images/placeholder.jpg'">
-                    </div>
-                    <div class="item-info">
-                        <div class="item-name">${item.name}</div>
-                        <div class="item-description">${item.description}</div>
-                        <div class="item-price">
-                            ${item.halfPrice ? 
-                                `Full: ₹${item.price} | Half: ₹${item.halfPrice}` : 
-                                `₹${item.price}`
-                            }
-                        </div>
-                        <button class="add-to-cart" onclick="quickAddToCart('${item.id}', '${item.name}', ${item.price}, ${item.halfPrice || 0}, ${item.halfPrice ? true : false})">
-                            Add to Cart
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-        } else {
-            throw new Error('Failed to load menu items');
-        }
-    } catch (error) {
-        console.error('❌ Failed to load popular items:', error);
-        popularItemsContainer.innerHTML = `
-            <div style="text-align: center; padding: 40px; grid-column: 1 / -1;">
-                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: #e74c3c;"></i>
-                <p style="margin-top: 10px; color: #666;">Failed to load popular items.</p>
-                <button onclick="loadPopularItems()" style="background: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px;">
-                    Try Again
-                </button>
-            </div>
-        `;
-    }
-}
-
 // Quick add to cart function for home page
 function quickAddToCart(itemId, itemName, fullPrice, halfPrice, hasHalf) {
     console.log('🛒 Quick add to cart:', { itemId, itemName, fullPrice, halfPrice, hasHalf });
@@ -902,9 +826,6 @@ function closeQuickAddModal() {
 
 // Initialize page-specific functionality
 document.addEventListener('DOMContentLoaded', function() {
-    // Load popular items on home page
-    loadPopularItems();
-    
     // Update cart UI (use the clean cart manager)
     if (window.cartManagerClean) {
         cartManagerClean.updateCartUI();

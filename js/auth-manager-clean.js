@@ -42,8 +42,9 @@ class AuthManagerClean {
             const response = await apiClient.signup(userData);
             
             if (response.success) {
+                // Set current user and update UI (automatic login)
                 this.currentUser = response.data.user;
-                console.log('✅ Account created successfully');
+                console.log('✅ Account created and user logged in automatically');
                 this.updateAuthUI();
                 return response.data.user;
             } else {

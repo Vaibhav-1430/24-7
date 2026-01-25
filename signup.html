@@ -9,6 +9,182 @@
     <link rel="stylesheet" href="css/auth.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* Success Modal Styles */
+        .success-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .success-modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .success-modal {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transform: scale(0.8) translateY(50px);
+            transition: all 0.3s ease;
+        }
+
+        .success-modal-overlay.show .success-modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .success-animation {
+            margin-bottom: 30px;
+        }
+
+        .checkmark-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            margin: 0 auto;
+            position: relative;
+            animation: scaleIn 0.6s ease-out;
+        }
+
+        @keyframes scaleIn {
+            0% {
+                transform: scale(0);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .checkmark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 15px;
+            border: 3px solid white;
+            border-top: none;
+            border-right: none;
+            transform: translate(-50%, -60%) rotate(-45deg);
+            animation: checkmarkDraw 0.4s ease-out 0.3s both;
+        }
+
+        @keyframes checkmarkDraw {
+            0% {
+                width: 0;
+                height: 0;
+            }
+            50% {
+                width: 30px;
+                height: 0;
+            }
+            100% {
+                width: 30px;
+                height: 15px;
+            }
+        }
+
+        .success-content h2 {
+            color: #2c3e50;
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .success-message {
+            color: #27ae60;
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 25px;
+        }
+
+        .user-info {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .user-info p {
+            margin: 8px 0;
+            color: #2c3e50;
+        }
+
+        .user-info p:first-child {
+            color: #e74c3c;
+            font-size: 1.1rem;
+        }
+
+        .success-actions {
+            margin-top: 20px;
+        }
+
+        .redirect-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: #7f8c8d;
+            font-size: 0.95rem;
+        }
+
+        .redirect-info i {
+            color: #e74c3c;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .success-modal {
+                padding: 30px 20px;
+                margin: 20px;
+            }
+
+            .success-content h2 {
+                font-size: 1.5rem;
+            }
+
+            .checkmark-circle {
+                width: 60px;
+                height: 60px;
+            }
+
+            .checkmark {
+                width: 20px;
+                height: 10px;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
@@ -190,6 +366,42 @@
             }
         }
 
+        // Show beautiful success modal
+        function showSuccessModal(user) {
+            const modalHTML = `
+                <div class="success-modal-overlay" id="successModal">
+                    <div class="success-modal">
+                        <div class="success-animation">
+                            <div class="checkmark-circle">
+                                <div class="checkmark"></div>
+                            </div>
+                        </div>
+                        <div class="success-content">
+                            <h2>🎉 Welcome to 24x7 Cafe!</h2>
+                            <p class="success-message">Your account has been created successfully!</p>
+                            <div class="user-info">
+                                <p><strong>Welcome, ${user.firstName} ${user.lastName}!</strong></p>
+                                <p>You are now logged in and ready to order delicious food.</p>
+                            </div>
+                            <div class="success-actions">
+                                <div class="redirect-info">
+                                    <i class="fas fa-home"></i>
+                                    <span>Redirecting to home page...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            // Animate the modal
+            setTimeout(() => {
+                document.getElementById('successModal').classList.add('show');
+            }, 100);
+        }
+
         // Show message function
         function showMessage(message, type) {
             const container = document.getElementById('messageContainer');
@@ -237,6 +449,12 @@
 
             if (password !== confirmPassword) {
                 return { isValid: false, message: 'Passwords do not match' };
+            }
+
+            // Check Terms & Conditions checkbox
+            const agreeTerms = document.getElementById('agreeTerms').checked;
+            if (!agreeTerms) {
+                return { isValid: false, message: 'Please agree to the Terms & Conditions to continue' };
             }
 
             return { isValid: true };
@@ -295,12 +513,14 @@
                 const result = await authManagerClean.signup(userData);
                 
                 console.log('✅ Signup result:', result);
-                showMessage('Account created successfully! Redirecting...', 'success');
                 
-                // Redirect after short delay
+                // Show beautiful success modal
+                showSuccessModal(result);
+                
+                // Redirect after showing success modal
                 setTimeout(() => {
                     window.location.href = 'index.html';
-                }, 2000);
+                }, 3000);
                 
             } catch (error) {
                 console.error('❌ Signup error:', error);

@@ -117,8 +117,9 @@
                 resultEl.innerHTML = `
                     <div class="result success">
                         <strong>✅ Signup Test Successful!</strong><br>
-                        User created: ${result.fullName}<br>
-                        Email: ${result.email}
+                        User created and automatically logged in: ${result.fullName}<br>
+                        Email: ${result.email}<br>
+                        <em>User is now logged in and can access protected features.</em>
                     </div>
                     <pre>${JSON.stringify(result, null, 2)}</pre>
                 `;

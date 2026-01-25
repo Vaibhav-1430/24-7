@@ -94,6 +94,13 @@
                 <input type="password" id="confirmPassword" name="confirmPassword" required>
             </div>
             
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer;">
+                    <input type="checkbox" id="agreeTerms" required style="width: auto; margin: 0;">
+                    I agree to the <a href="#" style="color: #e74c3c; text-decoration: none;">Terms & Conditions</a>
+                </label>
+            </div>
+            
             <button type="submit" class="btn" id="submitBtn">
                 <span class="spinner"></span>
                 <span class="btn-text">Create Account</span>
@@ -143,6 +150,7 @@
             document.getElementById('roomNumber').value = '101';
             document.getElementById('password').value = 'demo123456';
             document.getElementById('confirmPassword').value = 'demo123456';
+            document.getElementById('agreeTerms').checked = true;
         }
 
         document.getElementById('signupForm').addEventListener('submit', async function(e) {
@@ -160,6 +168,13 @@
             
             if (password.length < 6) {
                 showMessage('Password must be at least 6 characters long!', 'error');
+                return;
+            }
+            
+            // Check Terms & Conditions checkbox
+            const agreeTerms = document.getElementById('agreeTerms').checked;
+            if (!agreeTerms) {
+                showMessage('Please agree to the Terms & Conditions to continue!', 'error');
                 return;
             }
             
@@ -185,11 +200,11 @@
                 
                 const result = await authManagerClean.signup(userData);
                 
-                showMessage(`✅ Account created successfully! Welcome ${result.fullName}!`, 'success');
+                showMessage(`🎉 Account created successfully! You are now logged in. Welcome ${result.fullName}! Redirecting to home...`, 'success');
                 
                 setTimeout(() => {
                     window.location.href = 'index.html';
-                }, 2000);
+                }, 3000);
                 
             } catch (error) {
                 console.error('❌ Signup failed:', error);
