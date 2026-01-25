@@ -2,6 +2,129 @@
 let lastOrderCount = 0; // Track the number of orders to detect new ones
 let notificationSound = null; // Audio object for notification sound
 
+// Enhanced checkForNewOrders with settings
+function checkForNewOrders(orders) {
+    try {
+        const currentOrderCount = orders.length;
+        
+        console.log('🔔 Checking for new orders:', {
+            previousCount: lastOrderCount,
+            currentCount: currentOrderCount,
+            isNewOrder: lastOrderCount > 0 && currentOrderCount > lastOrderCount
+        });
+        
+        // Only check for new orders after the first load (avoid notification on page load)
+        if (lastOrderCount > 0 && currentOrderCount > lastOrderCount) {
+            const newOrdersCount = currentOrderCount - lastOrderCount;
+            console.log(`🔔 ${newOrdersCount} new order(s) detected!`);
+            
+            // Check if sound is enabled
+            const soundEnabled = localStorage.getItem('adminSoundEnabled') !== 'false';
+            console.log('🔔 Sound enabled:', soundEnabled);
+            
+            if (soundEnabled && window.playNotificationSound) {
+                console.log('🔔 Playing notification sound...');
+                window.playNotificationSound();
+            }
+            
+            // Check if browser notifications are enabled
+            const browserNotificationsEnabled = localStorage.getItem('adminBrowserNotificationsEnabled') !== 'false';
+            console.log('🔔 Browser notifications enabled:', browserNotificationsEnabled);
+            
+            if (browserNotificationsEnabled) {
+                showBrowserNotification(newOrdersCount, orders);
+            }
+            
+            // Flash the page title to get attention
+            flashPageTitle();
+        }
+        
+        // Update the last order count
+        lastOrderCount = currentOrderCount;
+        
+    } catch (error) {
+        console.error('❌ Error checking for new orders:', error);
+    }
+}
+
+function showBrowserNotification(newOrdersCount, orders) {
+    try {
+        console.log('🔔 Attempting to show browser notification...');
+        
+        // Request notification permission if not already granted
+        if (Notification.permission === 'default') {
+            Notification.requestPermission().then(permission => {
+                console.log('🔔 Notification permission:', permission);
+                if (permission === 'granted') {
+                    showNotification(newOrdersCount, orders);
+                }
+            });
+        } else if (Notification.permission === 'granted') {
+            showNotification(newOrdersCount, orders);
+        } else {
+            console.log('🔔 Notification permission denied');
+        }
+    } catch (error) {
+        console.error('❌ Browser notification error:', error);
+    }
+}
+
+function showNotification(newOrdersCount, orders) {
+    try {
+        const latestOrder = orders[0]; // Assuming orders are sorted by newest first
+        const title = `🍽️ New Order Alert!`;
+        const body = newOrdersCount === 1 
+            ? `New order #${latestOrder.orderNumber || latestOrder.id} received`
+            : `${newOrdersCount} new orders received`;
+        
+        console.log('🔔 Creating notification:', { title, body });
+        
+        const notification = new Notification(title, {
+            body: body,
+            icon: '/favicon.ico',
+            badge: '/favicon.ico',
+            tag: 'new-order',
+            requireInteraction: true
+        });
+        
+        // Auto close after 5 seconds
+        setTimeout(() => notification.close(), 5000);
+        
+        // Focus window when notification is clicked
+        notification.onclick = function() {
+            window.focus();
+            notification.close();
+        };
+        
+        console.log('🔔 Browser notification shown');
+    } catch (error) {
+        console.error('❌ Failed to show browser notification:', error);
+    }
+}
+
+function flashPageTitle() {
+    try {
+        console.log('🔔 Flashing page title...');
+        const originalTitle = document.title;
+        let flashCount = 0;
+        const maxFlashes = 6;
+        
+        const flashInterval = setInterval(() => {
+            document.title = flashCount % 2 === 0 ? '🔔 NEW ORDER!' : originalTitle;
+            flashCount++;
+            
+            if (flashCount >= maxFlashes) {
+                clearInterval(flashInterval);
+                document.title = originalTitle;
+            }
+        }, 500);
+        
+        console.log('🔔 Page title flashing started');
+    } catch (error) {
+        console.error('❌ Failed to flash page title:', error);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🔧 Admin dashboard loading...');
     
@@ -14,41 +137,75 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function initializeNotificationSound() {
     try {
-        // Create audio object with a notification sound
-        // Using a data URL for a simple beep sound
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        console.log('🔔 Initializing notification sound system...');
+        
+        // Create audio context
+        let audioContext = null;
         
         // Create a simple notification sound function
         window.playNotificationSound = function() {
             try {
-                const oscillator = audioContext.createOscillator();
-                const gainNode = audioContext.createGain();
+                console.log('🔔 Attempting to play notification sound...');
                 
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
+                // Initialize audio context on first use (requires user interaction)
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    console.log('🔔 Audio context created:', audioContext.state);
+                }
                 
-                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-                oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
-                oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
+                // Resume audio context if suspended
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume().then(() => {
+                        console.log('🔔 Audio context resumed');
+                        playBeepSound(audioContext);
+                    });
+                } else {
+                    playBeepSound(audioContext);
+                }
                 
-                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-                
-                oscillator.start(audioContext.currentTime);
-                oscillator.stop(audioContext.currentTime + 0.3);
-                
-                console.log('🔔 Notification sound played');
             } catch (error) {
                 console.error('❌ Failed to play notification sound:', error);
+                // Fallback: try to use a simple beep
+                try {
+                    console.log('🔔 Trying fallback beep...');
+                    // Create a simple audio element as fallback
+                    const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+                    audio.play().catch(e => console.log('🔔 Fallback audio failed:', e));
+                } catch (fallbackError) {
+                    console.error('❌ Fallback sound failed:', fallbackError);
+                }
             }
         };
+        
+        function playBeepSound(ctx) {
+            console.log('🔔 Playing beep sound...');
+            
+            const oscillator = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(ctx.destination);
+            
+            // Create a pleasant notification sound
+            oscillator.frequency.setValueAtTime(800, ctx.currentTime);
+            oscillator.frequency.setValueAtTime(600, ctx.currentTime + 0.1);
+            oscillator.frequency.setValueAtTime(800, ctx.currentTime + 0.2);
+            
+            gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+            
+            oscillator.start(ctx.currentTime);
+            oscillator.stop(ctx.currentTime + 0.3);
+            
+            console.log('🔔 Notification sound played successfully');
+        }
         
         console.log('🔔 Notification sound system initialized');
     } catch (error) {
         console.error('❌ Failed to initialize notification sound:', error);
         // Fallback: use system beep
         window.playNotificationSound = function() {
-            console.log('🔔 System beep (fallback)');
+            console.log('🔔 Using fallback notification (no sound available)');
         };
     }
 }
@@ -1176,40 +1333,6 @@ function startOrderRefreshTimer() {
     console.log('🔔 Notification system is now active and monitoring for new orders!');
 }
 
-// Enhanced checkForNewOrders with settings
-function checkForNewOrders(orders) {
-    try {
-        const currentOrderCount = orders.length;
-        
-        // Only check for new orders after the first load (avoid notification on page load)
-        if (lastOrderCount > 0 && currentOrderCount > lastOrderCount) {
-            const newOrdersCount = currentOrderCount - lastOrderCount;
-            console.log(`🔔 ${newOrdersCount} new order(s) detected!`);
-            
-            // Check if sound is enabled
-            const soundEnabled = localStorage.getItem('adminSoundEnabled') !== 'false';
-            if (soundEnabled && window.playNotificationSound) {
-                window.playNotificationSound();
-            }
-            
-            // Check if browser notifications are enabled
-            const browserNotificationsEnabled = localStorage.getItem('adminBrowserNotificationsEnabled') !== 'false';
-            if (browserNotificationsEnabled) {
-                showBrowserNotification(newOrdersCount, orders);
-            }
-            
-            // Flash the page title to get attention
-            flashPageTitle();
-        }
-        
-        // Update the last order count
-        lastOrderCount = currentOrderCount;
-        
-    } catch (error) {
-        console.error('❌ Error checking for new orders:', error);
-    }
-}
-
 // Make functions globally available
 window.testNotificationSound = testNotificationSound;
 window.testBrowserNotification = testBrowserNotification;
@@ -1219,34 +1342,107 @@ window.updateRefreshInterval = updateRefreshInterval;
 window.simulateNewOrder = function() {
     console.log('🧪 Simulating new order notification...');
     
-    // Temporarily increase the order count to trigger notification
-    const originalCount = lastOrderCount;
-    lastOrderCount = lastOrderCount - 1; // Decrease by 1 so next check will detect "new" order
-    
-    // Create a fake order for testing
-    const fakeOrders = [{
-        id: 'test-' + Date.now(),
-        orderNumber: 'TEST' + Math.floor(Math.random() * 1000),
-        status: 'pending',
-        orderTime: new Date().toISOString()
-    }];
-    
-    // Add existing order count
-    for (let i = 0; i < originalCount; i++) {
-        fakeOrders.push({ id: 'existing-' + i });
+    try {
+        // Create a fake order for testing
+        const fakeOrders = [];
+        
+        // Add existing orders plus one new one
+        for (let i = 0; i < lastOrderCount + 1; i++) {
+            fakeOrders.push({ 
+                id: i === lastOrderCount ? 'test-' + Date.now() : 'existing-' + i,
+                orderNumber: i === lastOrderCount ? 'TEST' + Math.floor(Math.random() * 1000) : 'OLD' + i,
+                status: 'pending',
+                orderTime: new Date().toISOString()
+            });
+        }
+        
+        console.log('🧪 Simulating orders:', {
+            previousCount: lastOrderCount,
+            newCount: fakeOrders.length,
+            fakeOrders: fakeOrders
+        });
+        
+        // Trigger the notification check
+        checkForNewOrders(fakeOrders);
+        
+        alert('Simulated new order notification! Check console for details.');
+        
+    } catch (error) {
+        console.error('❌ Error in simulateNewOrder:', error);
+        alert('Error simulating order: ' + error.message);
     }
-    
-    console.log('🧪 Fake orders:', fakeOrders);
-    console.log('🧪 Previous count:', lastOrderCount, 'New count:', fakeOrders.length);
-    
-    // Trigger the notification check
-    checkForNewOrders(fakeOrders);
-    
-    alert('Simulated new order notification! Check console for details.');
 };
 
 window.forceRefreshOrders = function() {
     console.log('🔄 Force refreshing orders...');
     loadOrders();
     alert('Orders refreshed! Check console for details.');
+};
+
+// Simple test functions that work immediately
+window.testNotificationSound = function() {
+    console.log('🔔 Testing notification sound...');
+    try {
+        if (window.playNotificationSound) {
+            window.playNotificationSound();
+            console.log('🔔 Sound test completed');
+        } else {
+            console.error('❌ playNotificationSound not available');
+            alert('Sound system not available. Check console for details.');
+        }
+    } catch (error) {
+        console.error('❌ Sound test error:', error);
+        alert('Sound test failed: ' + error.message);
+    }
+};
+
+window.testBrowserNotification = function() {
+    console.log('🔔 Testing browser notification...');
+    try {
+        if (Notification.permission === 'granted') {
+            const notification = new Notification('🍽️ Test Notification', {
+                body: 'This is a test notification from 24x7 Cafe Admin!',
+                icon: '/favicon.ico'
+            });
+            setTimeout(() => notification.close(), 3000);
+            console.log('🔔 Test notification shown');
+        } else if (Notification.permission === 'default') {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    const notification = new Notification('🍽️ Permission Granted!', {
+                        body: 'Notifications are now enabled. This is a test.',
+                        icon: '/favicon.ico'
+                    });
+                    setTimeout(() => notification.close(), 3000);
+                } else {
+                    alert('Notification permission denied');
+                }
+            });
+        } else {
+            alert('Notification permission denied. Please enable notifications in your browser settings.');
+        }
+    } catch (error) {
+        console.error('❌ Notification test error:', error);
+        alert('Notification test failed: ' + error.message);
+    }
+};
+
+window.initializeAudioContext = function() {
+    console.log('🔔 Initializing audio context with user interaction...');
+    try {
+        // Re-initialize the notification sound system
+        initializeNotificationSound();
+        
+        // Test the sound immediately
+        setTimeout(() => {
+            if (window.playNotificationSound) {
+                window.playNotificationSound();
+                alert('Audio system initialized! Sound should have played.');
+            }
+        }, 100);
+        
+    } catch (error) {
+        console.error('❌ Audio initialization error:', error);
+        alert('Audio initialization failed: ' + error.message);
+    }
 };
