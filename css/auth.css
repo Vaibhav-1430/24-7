@@ -119,6 +119,7 @@
     cursor: pointer;
     font-size: 0.9rem;
     color: #666;
+    margin: 10px 0;
 }
 
 .checkbox-container input {
@@ -126,13 +127,15 @@
 }
 
 .checkmark {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     border: 2px solid #ddd;
     border-radius: 4px;
-    margin-right: 10px;
+    margin-right: 12px;
     position: relative;
     transition: all 0.3s;
+    flex-shrink: 0;
+    background: white;
 }
 
 .checkbox-container input:checked + .checkmark {
@@ -143,10 +146,10 @@
 .checkbox-container input:checked + .checkmark::after {
     content: '';
     position: absolute;
-    left: 5px;
+    left: 6px;
     top: 2px;
-    width: 4px;
-    height: 8px;
+    width: 5px;
+    height: 10px;
     border: solid white;
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);

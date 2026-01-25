@@ -231,7 +231,8 @@
 }
 
 .view-details-btn,
-.reorder-btn {
+.reorder-btn,
+.cancel-order-btn {
     padding: 8px 16px;
     border: none;
     border-radius: 6px;
@@ -239,6 +240,9 @@
     cursor: pointer;
     transition: all 0.3s;
     font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .view-details-btn {
@@ -248,6 +252,7 @@
 
 .view-details-btn:hover {
     background: #2980b9;
+    transform: translateY(-1px);
 }
 
 .reorder-btn {
@@ -257,6 +262,24 @@
 
 .reorder-btn:hover {
     background: #229954;
+    transform: translateY(-1px);
+}
+
+.cancel-order-btn {
+    background: #e74c3c;
+    color: white;
+}
+
+.cancel-order-btn:hover {
+    background: #c0392b;
+    transform: translateY(-1px);
+}
+
+.cancel-order-btn:disabled,
+.reorder-btn:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+    transform: none;
 }
 
 /* No Orders */

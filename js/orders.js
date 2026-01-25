@@ -144,7 +144,7 @@ function displayOrders(orders) {
                     <i class="fas fa-eye"></i>
                     View Details
                 </button>
-                ${order.status === 'pending' ? `
+                ${(order.status === 'pending' || order.status === 'confirmed') ? `
                     <button class="cancel-order-btn" onclick="cancelOrder('${order.id}')">
                         <i class="fas fa-times"></i>
                         Cancel Order
@@ -211,20 +211,110 @@ window.cancelOrder = async function(orderId) {
     
     try {
         console.log('❌ Cancelling order:', orderId);
-        // For now, just show a message
-        alert('Order cancellation feature will be available soon!');
-        // await apiClient.cancelOrder(orderId);
-        // loadUserOrders(); // Reload orders
+        
+        // Show loading state
+        const cancelBtn = document.querySelector(`button[onclick="cancelOrder('${orderId}')"]`);
+        if (cancelBtn) {
+            cancelBtn.disabled = true;
+            cancelBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cancelling...';
+        }
+        
+        // Update order status to cancelled
+        const response = await fetch('/.netlify/functions/admin-orders', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            },
+            body: JSON.stringify({
+                orderId: orderId,
+                status: 'cancelled'
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('Order cancelled successfully!');
+            loadUserOrders(); // Reload orders to show updated status
+        } else {
+            throw new Error(result.message || 'Failed to cancel order');
+        }
+        
     } catch (error) {
         console.error('❌ Error cancelling order:', error);
         alert('Failed to cancel order. Please try again.');
+        
+        // Reset button state
+        const cancelBtn = document.querySelector(`button[onclick="cancelOrder('${orderId}')"]`);
+        if (cancelBtn) {
+            cancelBtn.disabled = false;
+            cancelBtn.innerHTML = '<i class="fas fa-times"></i> Cancel Order';
+        }
     }
 };
 
-window.reorderItems = function(orderId) {
-    console.log('🔄 Reordering items from order:', orderId);
-    alert('Reorder feature will be available soon!\n\nFor now, please add items manually from the menu.');
-    window.location.href = 'menu.html';
+window.reorderItems = async function(orderId) {
+    try {
+        console.log('🔄 Reordering items from order:', orderId);
+        
+        // Show loading state
+        const reorderBtn = document.querySelector(`button[onclick="reorderItems('${orderId}')"]`);
+        if (reorderBtn) {
+            reorderBtn.disabled = true;
+            reorderBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding to Cart...';
+        }
+        
+        // Get the order details from the current displayed orders
+        const orders = await apiClient.getOrders();
+        const order = orders.find(o => o.id === orderId);
+        
+        if (!order) {
+            throw new Error('Order not found');
+        }
+        
+        // Add each item from the order to the cart
+        let addedItems = 0;
+        for (const item of order.items) {
+            try {
+                await cartManagerClean.addItem({
+                    menuItemId: item.menuItemId || item.id,
+                    name: item.name,
+                    price: item.price,
+                    quantity: item.quantity,
+                    instructions: item.instructions || ''
+                });
+                addedItems++;
+            } catch (error) {
+                console.error('❌ Failed to add item to cart:', item.name, error);
+            }
+        }
+        
+        if (addedItems > 0) {
+            alert(`Successfully added ${addedItems} items to your cart!`);
+            
+            // Update cart UI
+            if (window.cartManagerClean) {
+                cartManagerClean.updateCartUI();
+            }
+            
+            // Redirect to cart page
+            window.location.href = 'cart.html';
+        } else {
+            throw new Error('Failed to add any items to cart');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error reordering items:', error);
+        alert('Failed to add items to cart. Please try adding them manually from the menu.');
+        
+        // Reset button state
+        const reorderBtn = document.querySelector(`button[onclick="reorderItems('${orderId}')"]`);
+        if (reorderBtn) {
+            reorderBtn.disabled = false;
+            reorderBtn.innerHTML = '<i class="fas fa-redo"></i> Reorder';
+        }
+    }
 };
 
 // Close modal when clicking outside
