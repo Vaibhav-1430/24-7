@@ -208,7 +208,11 @@ async function loadDashboardData() {
         // Load recent orders
         try {
             const ordersResponse = await apiClient.getAdminOrders();
+            console.log('📊 Dashboard orders response:', ordersResponse);
+            
             const recentOrders = ordersResponse?.orders?.slice(0, 5) || [];
+            console.log('📊 Recent orders for dashboard:', recentOrders);
+            
             loadRecentOrders(recentOrders);
         } catch (orderError) {
             console.error('❌ Failed to load recent orders:', orderError);
@@ -264,19 +268,28 @@ async function loadOrders() {
     try {
         console.log('📋 Loading orders...');
         const response = await apiClient.getAdminOrders();
+        console.log('📋 Orders response:', response);
+        console.log('📋 Orders array:', response?.orders);
+        console.log('📋 Orders count:', response?.orders?.length);
+        
         const orders = response?.orders || [];
+        console.log('📋 Final orders to display:', orders);
+        
         displayOrders(orders);
     } catch (error) {
         console.error('❌ Failed to load orders:', error);
         const ordersList = document.getElementById('ordersList');
         ordersList.innerHTML = `
             <div style="text-align: center; padding: 40px; color: #666;">
-                <i class="fas fa-shopping-bag" style="font-size: 3rem; margin-bottom: 15px; color: #3498db;"></i>
-                <h3 style="color: #333; margin-bottom: 10px;">No Orders Yet</h3>
-                <p>Orders will appear here when customers start placing them.</p>
+                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; margin-bottom: 15px; color: #f39c12;"></i>
+                <h3 style="color: #333; margin-bottom: 10px;">Failed to Load Orders</h3>
+                <p>Error: ${error.message}</p>
                 <p style="font-size: 0.9rem; margin-top: 15px; color: #999;">
-                    Make sure your menu items are available for customers to order.
+                    Check browser console for more details.
                 </p>
+                <button onclick="loadOrders()" style="margin-top: 15px; background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                    <i class="fas fa-refresh"></i> Try Again
+                </button>
             </div>
         `;
     }
@@ -346,7 +359,11 @@ async function filterOrders(status) {
     try {
         console.log('🔍 Filtering orders by status:', status);
         const response = await apiClient.getAdminOrders(status);
-        const orders = response.orders || [];
+        console.log('🔍 Filtered orders response:', response);
+        
+        const orders = response?.orders || [];
+        console.log('🔍 Filtered orders to display:', orders);
+        
         displayOrders(orders);
     } catch (error) {
         console.error('❌ Failed to filter orders:', error);
@@ -685,22 +702,30 @@ window.closeItemModal = closeItemModal;
 window.toggleAvailability = toggleAvailability;
 window.deleteMenuItem = deleteMenuItem;
 
-// Test function for debugging
-window.testAdminConnection = async function() {
+// Test function for debugging orders API
+window.testOrdersAPI = async function() {
     try {
-        console.log('🧪 Testing admin connection...');
-        const testResult = await apiClient.testAdminEndpoint();
-        console.log('🧪 Test result:', testResult);
+        console.log('🧪 Testing orders API...');
         
-        alert(`Admin Test Results:
-MongoDB Connected: ${testResult.mongodbConnected}
-Has Auth Header: ${testResult.hasAuthHeader}
-Token Length: ${testResult.tokenLength}
-Timestamp: ${testResult.timestamp}`);
+        // Test the test endpoint first
+        const testResponse = await fetch('/.netlify/functions/test-admin-orders');
+        const testData = await testResponse.json();
+        console.log('🧪 Test endpoint result:', testData);
+        
+        // Test the actual admin orders endpoint
+        const adminResponse = await apiClient.getAdminOrders();
+        console.log('🧪 Admin orders result:', adminResponse);
+        
+        alert(`Orders API Test Results:
+        
+Test Endpoint: ${testData.count} orders found
+Admin Endpoint: ${adminResponse?.orders?.length || 0} orders found
+
+Check browser console for detailed logs.`);
         
     } catch (error) {
-        console.error('🧪 Test failed:', error);
-        alert(`Admin Test Failed: ${error.message}`);
+        console.error('🧪 Orders API test failed:', error);
+        alert(`Orders API Test Failed: ${error.message}`);
     }
 };
 

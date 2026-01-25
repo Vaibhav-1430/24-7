@@ -454,9 +454,17 @@ class APIClient {
 
     // Admin API methods
     async getAdminOrders(status = null) {
+        console.log('🔧 API: Getting admin orders...');
+        console.log('🔧 API: Status filter:', status);
+        
         const endpoint = status && status !== 'all' ? `/admin-orders?status=${status}` : '/admin-orders';
         const response = await this.request(endpoint);
-        return response.data || [];
+        
+        console.log('📡 API: Admin orders response:', response);
+        console.log('📡 API: Orders array:', response.orders);
+        
+        // Return the full response so admin.js can access response.orders
+        return response;
     }
 
     async updateOrderStatus(orderId, status, notes = '') {

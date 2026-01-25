@@ -174,15 +174,21 @@ exports.handler = async (event, context) => {
 
         // Check if user has admin privileges
         if (!user.isAdmin) {
+            console.log(`❌ Admin access denied for user: ${user.email}, isAdmin: ${user.isAdmin}`);
             return {
                 statusCode: 403,
                 headers,
                 body: JSON.stringify({ 
                     error: 'Admin access required',
-                    message: `User ${user.email} does not have admin privileges.`
+                    message: `User ${user.email} does not have admin privileges.`,
+                    userEmail: user.email,
+                    isAdmin: user.isAdmin,
+                    debug: 'Check if user account has admin privileges set to true'
                 })
             };
         }
+
+        console.log(`✅ Admin access granted for user: ${user.email}`);
 
         if (event.httpMethod === 'GET') {
             // Get all orders with optional status filter
