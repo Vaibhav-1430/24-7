@@ -346,9 +346,14 @@ function displayOrders(orders) {
                         <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
                     </select>
                     <textarea class="admin-notes" placeholder="Add notes (optional)..." data-order-id="${order.orderNumber || order.id}"></textarea>
-                    <button class="update-status-btn" onclick="updateOrderStatus('${order.orderNumber || order.id}')">
-                        Update Status
-                    </button>
+                    <div style="display: flex; gap: 10px; margin-top: 10px;">
+                        <button class="update-status-btn" onclick="updateOrderStatus('${order.orderNumber || order.id}')" style="flex: 1;">
+                            Update Status
+                        </button>
+                        <button class="delete-order-btn" onclick="deleteOrder('${order.orderNumber || order.id}')" style="background: #e74c3c; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.3s;">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -403,6 +408,99 @@ async function updateOrderStatus(orderId) {
         const updateBtn = document.querySelector(`[data-order-id="${orderId}"]`).parentNode.querySelector('.update-status-btn');
         updateBtn.disabled = false;
         updateBtn.textContent = 'Update Status';
+    }
+}
+
+async function deleteOrder(orderId) {
+    // Confirm deletion
+    const confirmDelete = confirm(
+        `Are you sure you want to delete Order #${orderId}?\n\n` +
+        `This action cannot be undone and will permanently remove the order from the system.\n\n` +
+        `Click OK to delete or Cancel to keep the order.`
+    );
+    
+    if (!confirmDelete) {
+        return;
+    }
+    
+    try {
+        console.log('🗑️ Deleting order:', orderId);
+        
+        // Show loading state
+        const deleteBtn = document.querySelector(`button[onclick="deleteOrder('${orderId}')"]`);
+        const originalText = deleteBtn.innerHTML;
+        deleteBtn.disabled = true;
+        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+        
+        await apiClient.deleteOrder(orderId);
+        
+        // Refresh orders display
+        await loadOrders();
+        await loadDashboardData();
+        
+        alert(`Order #${orderId} has been deleted successfully.`);
+        
+    } catch (error) {
+        console.error('❌ Failed to delete order:', error);
+        alert('Failed to delete order. Please try again.');
+        
+        // Reset button state
+        const deleteBtn = document.querySelector(`button[onclick="deleteOrder('${orderId}')"]`);
+        if (deleteBtn) {
+            deleteBtn.disabled = false;
+            deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete';
+        }
+    }
+}
+
+async function bulkDeleteCancelledOrders() {
+    // Confirm bulk deletion
+    const confirmDelete = confirm(
+        `Are you sure you want to delete ALL cancelled orders?\n\n` +
+        `This will permanently remove all orders with "cancelled" status from the system.\n\n` +
+        `This action cannot be undone. Click OK to proceed or Cancel to abort.`
+    );
+    
+    if (!confirmDelete) {
+        return;
+    }
+    
+    try {
+        console.log('🗑️ Bulk deleting cancelled orders...');
+        
+        // Get all cancelled orders first
+        const response = await apiClient.getAdminOrders('cancelled');
+        const cancelledOrders = response?.orders || [];
+        
+        if (cancelledOrders.length === 0) {
+            alert('No cancelled orders found to delete.');
+            return;
+        }
+        
+        // Show progress
+        const totalOrders = cancelledOrders.length;
+        let deletedCount = 0;
+        
+        // Delete each cancelled order
+        for (const order of cancelledOrders) {
+            try {
+                await apiClient.deleteOrder(order.orderNumber || order.id);
+                deletedCount++;
+                console.log(`🗑️ Deleted order ${deletedCount}/${totalOrders}: ${order.orderNumber}`);
+            } catch (error) {
+                console.error(`❌ Failed to delete order ${order.orderNumber}:`, error);
+            }
+        }
+        
+        // Refresh orders display
+        await loadOrders();
+        await loadDashboardData();
+        
+        alert(`Bulk deletion completed!\n\nDeleted: ${deletedCount} orders\nTotal cancelled orders: ${totalOrders}`);
+        
+    } catch (error) {
+        console.error('❌ Failed to bulk delete cancelled orders:', error);
+        alert('Failed to bulk delete cancelled orders. Please try again.');
     }
 }
 
@@ -696,6 +794,8 @@ function formatDateTime(dateString) {
 
 // Global functions
 window.updateOrderStatus = updateOrderStatus;
+window.deleteOrder = deleteOrder;
+window.bulkDeleteCancelledOrders = bulkDeleteCancelledOrders;
 window.openAddItemModal = openAddItemModal;
 window.editMenuItem = editMenuItem;
 window.closeItemModal = closeItemModal;

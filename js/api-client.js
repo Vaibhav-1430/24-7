@@ -479,6 +479,17 @@ class APIClient {
         return response.data;
     }
 
+    async deleteOrder(orderId) {
+        console.log('🗑️ API: Deleting order:', orderId);
+        
+        const response = await this.request(`/admin-orders?orderId=${orderId}`, {
+            method: 'DELETE'
+        });
+        
+        console.log('🗑️ API: Delete response:', response);
+        return response;
+    }
+
     async getAdminAnalytics(days = 30) {
         console.log('📊 API: Getting admin analytics...');
         console.log('📊 API: Days:', days);

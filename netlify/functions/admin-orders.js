@@ -288,6 +288,42 @@ exports.handler = async (event, context) => {
             };
         }
 
+        if (event.httpMethod === 'DELETE') {
+            // Delete order
+            const { orderId } = event.queryStringParameters || {};
+            
+            if (!orderId) {
+                return {
+                    statusCode: 400,
+                    headers,
+                    body: JSON.stringify({ error: 'Order ID is required' })
+                };
+            }
+
+            console.log(`🗑️ Admin: Deleting order ${orderId} by ${user.email}`);
+
+            const result = await Order.deleteOne({ orderNumber: orderId });
+
+            if (result.deletedCount === 0) {
+                return {
+                    statusCode: 404,
+                    headers,
+                    body: JSON.stringify({ error: 'Order not found' })
+                };
+            }
+
+            console.log(`✅ Admin: Order ${orderId} deleted successfully`);
+
+            return {
+                statusCode: 200,
+                headers,
+                body: JSON.stringify({
+                    success: true,
+                    message: 'Order deleted successfully'
+                })
+            };
+        }
+
         return {
             statusCode: 405,
             headers,
