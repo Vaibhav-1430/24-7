@@ -895,6 +895,222 @@ async function quickStockUpdate(itemId, currentStock) {
     }
 }
 
+// Image Management Functions
+let selectedImageUrl = '';
+
+function showImageUploadOptions() {
+    document.getElementById('imageUploadModal').style.display = 'block';
+    loadSampleImages();
+}
+
+function closeImageUploadModal() {
+    document.getElementById('imageUploadModal').style.display = 'none';
+    clearImagePreview();
+}
+
+function switchImageTab(tabName) {
+    // Remove active class from all tabs and content
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    
+    // Add active class to selected tab and content
+    event.target.classList.add('active');
+    document.getElementById(tabName + 'Tab').classList.add('active');
+}
+
+function showImageGallery() {
+    showImageUploadOptions();
+    switchImageTab('gallery');
+}
+
+// Handle file upload
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('imageFileInput');
+    const uploadArea = document.getElementById('uploadArea');
+    
+    if (fileInput && uploadArea) {
+        fileInput.addEventListener('change', handleFileSelect);
+        
+        // Drag and drop functionality
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+        
+        uploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+        });
+        
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+    }
+});
+
+function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (file) {
+        handleFile(file);
+    }
+}
+
+function handleFile(file) {
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+        alert('Please select an image file (JPG, PNG, WebP)');
+        return;
+    }
+    
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        alert('File size must be less than 5MB');
+        return;
+    }
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        selectedImageUrl = e.target.result; // Base64 data URL
+        showImagePreview(selectedImageUrl);
+    };
+    reader.readAsDataURL(file);
+}
+
+function previewImageUrl() {
+    const url = document.getElementById('imageUrlInput').value.trim();
+    if (!url) {
+        alert('Please enter an image URL');
+        return;
+    }
+    
+    // Test if URL is valid by trying to load it
+    const img = new Image();
+    img.onload = function() {
+        selectedImageUrl = url;
+        showImagePreview(url);
+    };
+    img.onerror = function() {
+        alert('Unable to load image from this URL. Please check the URL and try again.');
+    };
+    img.src = url;
+}
+
+function showImagePreview(url) {
+    const previewSection = document.getElementById('modalImagePreview');
+    const previewImg = document.getElementById('modalPreviewImg');
+    
+    previewImg.src = url;
+    previewSection.style.display = 'block';
+}
+
+function clearImagePreview() {
+    const previewSection = document.getElementById('modalImagePreview');
+    previewSection.style.display = 'none';
+    selectedImageUrl = '';
+}
+
+function useSelectedImage() {
+    if (selectedImageUrl) {
+        // Set the image URL in the main form
+        document.getElementById('itemImage').value = selectedImageUrl;
+        
+        // Show preview in main form
+        const mainPreview = document.getElementById('imagePreview');
+        const mainPreviewImg = document.getElementById('previewImg');
+        
+        mainPreviewImg.src = selectedImageUrl;
+        mainPreview.style.display = 'block';
+        
+        // Close modal
+        closeImageUploadModal();
+    }
+}
+
+function removeImagePreview() {
+    document.getElementById('imagePreview').style.display = 'none';
+    document.getElementById('itemImage').value = '';
+}
+
+function loadSampleImages() {
+    const sampleImages = [
+        {
+            name: 'Noodles',
+            url: 'https://images.unsplash.com/photo-1555126634-323283e090fa?w=400&h=300&fit=crop'
+        },
+        {
+            name: 'Fried Rice',
+            url: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&h=300&fit=crop'
+        },
+        {
+            name: 'Momos',
+            url: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=400&h=300&fit=crop'
+        },
+        {
+            name: 'Rolls',
+            url: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop'
+        },
+        {
+            name: 'Paratha',
+            url: 'https://images.unsplash.com/photo-1574653853027-5d3ba0c95f5d?w=400&h=300&fit=crop'
+        },
+        {
+            name: 'Cold Drinks',
+            url: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&h=300&fit=crop'
+        },
+        {
+            name: 'Coffee',
+            url: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400&h=300&fit=crop'
+        },
+        {
+            name: 'Snacks',
+            url: 'https://images.unsplash.com/photo-1599490659213-e2b9527bd087?w=400&h=300&fit=crop'
+        }
+    ];
+    
+    const grid = document.getElementById('sampleImagesGrid');
+    grid.innerHTML = sampleImages.map(img => `
+        <div class="sample-image-card" onclick="selectSampleImage('${img.url}')">
+            <img src="${img.url}" alt="${img.name}" loading="lazy">
+            <div class="sample-image-name">${img.name}</div>
+        </div>
+    `).join('');
+}
+
+function selectSampleImage(url) {
+    selectedImageUrl = url;
+    showImagePreview(url);
+}
+
+// Update the image preview when URL is typed
+document.addEventListener('DOMContentLoaded', function() {
+    const imageInput = document.getElementById('itemImage');
+    if (imageInput) {
+        imageInput.addEventListener('input', function() {
+            const url = this.value.trim();
+            if (url && (url.startsWith('http') || url.startsWith('images/'))) {
+                const img = new Image();
+                img.onload = function() {
+                    const preview = document.getElementById('imagePreview');
+                    const previewImg = document.getElementById('previewImg');
+                    previewImg.src = url;
+                    preview.style.display = 'block';
+                };
+                img.onerror = function() {
+                    document.getElementById('imagePreview').style.display = 'none';
+                };
+                img.src = url;
+            } else {
+                document.getElementById('imagePreview').style.display = 'none';
+            }
+        });
+    }
+});
+
 async function loadAnalytics() {
     try {
         console.log('📈 Loading analytics...');
@@ -1134,6 +1350,15 @@ window.closeItemModal = closeItemModal;
 window.toggleAvailability = toggleAvailability;
 window.deleteMenuItem = deleteMenuItem;
 window.quickStockUpdate = quickStockUpdate;
+window.showImageUploadOptions = showImageUploadOptions;
+window.closeImageUploadModal = closeImageUploadModal;
+window.switchImageTab = switchImageTab;
+window.showImageGallery = showImageGallery;
+window.previewImageUrl = previewImageUrl;
+window.useSelectedImage = useSelectedImage;
+window.removeImagePreview = removeImagePreview;
+window.selectSampleImage = selectSampleImage;
+window.clearImagePreview = clearImagePreview;
 
 // Test function for debugging orders API
 window.testOrdersAPI = async function() {

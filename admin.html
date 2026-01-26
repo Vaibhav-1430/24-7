@@ -385,8 +385,33 @@
                     </div>
                 </div>
                 <div class="form-group">
-                    <label for="itemImage">Image URL</label>
-                    <input type="url" id="itemImage" name="image" placeholder="https://example.com/image.jpg">
+                    <label for="itemImage">Item Image</label>
+                    <div class="image-upload-section">
+                        <input type="url" id="itemImage" name="image" placeholder="https://example.com/image.jpg or images/your-image.jpg">
+                        <div class="image-upload-options">
+                            <button type="button" class="upload-btn" onclick="showImageUploadOptions()">
+                                <i class="fas fa-upload"></i> Add Image
+                            </button>
+                            <button type="button" class="browse-btn" onclick="showImageGallery()">
+                                <i class="fas fa-images"></i> Browse Gallery
+                            </button>
+                        </div>
+                        <div class="image-preview" id="imagePreview" style="display: none;">
+                            <img id="previewImg" src="" alt="Preview">
+                            <button type="button" class="remove-image-btn" onclick="removeImagePreview()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="image-help">
+                        <small>
+                            <strong>Options:</strong><br>
+                            • Upload your own image files<br>
+                            • Use online image URLs (imgur, cloudinary, etc.)<br>
+                            • Choose from food image websites<br>
+                            • Recommended size: 400x300px or similar ratio
+                        </small>
+                    </div>
                 </div>
                 
                 <!-- Stock Management Section -->
@@ -445,6 +470,85 @@
                     <button type="submit">Save Item</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Image Upload Modal -->
+    <div class="modal" id="imageUploadModal">
+        <div class="modal-content">
+            <span class="close" onclick="closeImageUploadModal()">&times;</span>
+            <div class="modal-header">
+                <h3>Add Item Image</h3>
+            </div>
+            <div class="image-upload-tabs">
+                <button class="tab-btn active" onclick="switchImageTab('upload')">Upload File</button>
+                <button class="tab-btn" onclick="switchImageTab('url')">Image URL</button>
+                <button class="tab-btn" onclick="switchImageTab('gallery')">Free Images</button>
+            </div>
+            
+            <!-- Upload Tab -->
+            <div class="tab-content active" id="uploadTab">
+                <div class="upload-area" id="uploadArea">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Drag & drop your image here or click to browse</p>
+                    <input type="file" id="imageFileInput" accept="image/*" style="display: none;">
+                    <button type="button" onclick="document.getElementById('imageFileInput').click()">
+                        Choose File
+                    </button>
+                </div>
+                <div class="upload-instructions">
+                    <h4>Image Guidelines:</h4>
+                    <ul>
+                        <li>Supported formats: JPG, PNG, WebP</li>
+                        <li>Maximum size: 5MB</li>
+                        <li>Recommended dimensions: 400x300px</li>
+                        <li>Square images work best for menu cards</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- URL Tab -->
+            <div class="tab-content" id="urlTab">
+                <div class="url-input-section">
+                    <label for="imageUrlInput">Image URL:</label>
+                    <input type="url" id="imageUrlInput" placeholder="https://example.com/image.jpg">
+                    <button type="button" onclick="previewImageUrl()">Preview</button>
+                </div>
+                <div class="url-suggestions">
+                    <h4>Free Food Image Sources:</h4>
+                    <div class="image-sources">
+                        <a href="https://unsplash.com/s/photos/food" target="_blank">
+                            <i class="fas fa-external-link-alt"></i> Unsplash (Free)
+                        </a>
+                        <a href="https://www.pexels.com/search/food/" target="_blank">
+                            <i class="fas fa-external-link-alt"></i> Pexels (Free)
+                        </a>
+                        <a href="https://pixabay.com/images/search/food/" target="_blank">
+                            <i class="fas fa-external-link-alt"></i> Pixabay (Free)
+                        </a>
+                    </div>
+                    <p><small>Right-click on any image → "Copy image address" → Paste here</small></p>
+                </div>
+            </div>
+            
+            <!-- Gallery Tab -->
+            <div class="tab-content" id="galleryTab">
+                <div class="sample-images-grid" id="sampleImagesGrid">
+                    <!-- Sample food images will be loaded here -->
+                </div>
+            </div>
+            
+            <div class="image-preview-section" id="modalImagePreview" style="display: none;">
+                <img id="modalPreviewImg" src="" alt="Preview">
+                <div class="preview-actions">
+                    <button type="button" class="use-image-btn" onclick="useSelectedImage()">
+                        <i class="fas fa-check"></i> Use This Image
+                    </button>
+                    <button type="button" class="cancel-btn" onclick="clearImagePreview()">
+                        Cancel
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 

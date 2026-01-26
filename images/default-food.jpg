@@ -1,0 +1,12 @@
+# This is a placeholder for the default food image
+# You should replace this with an actual image file
+
+# To add actual images:
+# 1. Use your hosting panel/FTP to upload JPG/PNG files to this images/ folder
+# 2. Name them descriptively like: chicken-noodles.jpg, veg-fried-rice.jpg, etc.
+# 3. Reference them in admin panel as: images/chicken-noodles.jpg
+
+# Recommended image sizes:
+# - 400x300 pixels (4:3 ratio)
+# - Under 500KB for fast loading
+# - JPG format for photos, PNG for graphics with transparency
