@@ -776,6 +776,30 @@ body {
 }
 
 /* Image Upload Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+}
+
 .image-upload-tabs {
     display: flex;
     border-bottom: 2px solid #e9ecef;

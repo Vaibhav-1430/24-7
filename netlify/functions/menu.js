@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-// Self-contained MenuItem Schema
+// Self-contained MenuItem Schema with stock management
 const menuItemSchema = new mongoose.Schema({
     name: { type: String, required: true, trim: true },
     description: { type: String, required: true, trim: true },
@@ -11,7 +11,16 @@ const menuItemSchema = new mongoose.Schema({
     available: { type: Boolean, default: true },
     popular: { type: Boolean, default: false },
     isVeg: { type: Boolean, default: true },
-    spiceLevel: { type: String, enum: ['Mild', 'Medium', 'Spicy'], default: 'Medium' }
+    spiceLevel: { type: String, enum: ['Mild', 'Medium', 'Spicy'], default: 'Medium' },
+    // Stock Management Fields
+    inStock: { type: Boolean, default: true },
+    stockQuantity: { type: Number, default: 100, min: 0 },
+    lowStockThreshold: { type: Number, default: 10, min: 0 },
+    stockStatus: { 
+        type: String, 
+        enum: ['in-stock', 'low-stock', 'out-of-stock'], 
+        default: 'in-stock' 
+    }
 }, { timestamps: true });
 
 // Global connection cache
@@ -591,8 +600,15 @@ exports.handler = async (event, context) => {
             console.log('✅ Menu items seeded successfully');
         }
         
-        // Build query
-        let query = { available: true };
+        // Build query - filter out unavailable and out-of-stock items for regular users
+        let query = { 
+            available: true,
+            $or: [
+                { inStock: { $ne: false } }, // Include items where inStock is not false
+                { inStock: { $exists: false } } // Include items where inStock field doesn't exist (legacy items)
+            ]
+        };
+        
         if (category && category !== 'all') {
             query.category = new RegExp(category, 'i');
         }

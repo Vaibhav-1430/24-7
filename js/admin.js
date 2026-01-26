@@ -866,32 +866,43 @@ async function quickStockUpdate(itemId, currentStock) {
     }
     
     try {
+        console.log('🔄 Updating stock for item:', itemId, 'to quantity:', stockQuantity);
+        
         // Determine stock status based on quantity
         let stockStatus = 'in-stock';
+        let inStock = true;
         const lowStockThreshold = 10; // Default threshold
         
         if (stockQuantity === 0) {
             stockStatus = 'out-of-stock';
+            inStock = false;
         } else if (stockQuantity <= lowStockThreshold) {
             stockStatus = 'low-stock';
+            inStock = true;
         }
         
-        const response = await apiClient.updateMenuItem(itemId, {
+        const updateData = {
             stockQuantity: stockQuantity,
             stockStatus: stockStatus,
-            inStock: stockQuantity > 0
-        });
+            inStock: inStock
+        };
         
-        if (response.success) {
-            alert(`Stock updated successfully!\nNew stock: ${stockQuantity}`);
+        console.log('📝 Update data:', updateData);
+        
+        const response = await apiClient.updateMenuItem(itemId, updateData);
+        
+        console.log('✅ Update response:', response);
+        
+        if (response && response.success) {
+            alert(`Stock updated successfully!\nNew stock: ${stockQuantity}\nStatus: ${stockStatus}`);
             await loadMenuItems(); // Refresh the display
         } else {
-            throw new Error(response.message || 'Failed to update stock');
+            throw new Error(response?.message || 'Failed to update stock');
         }
         
     } catch (error) {
         console.error('❌ Failed to update stock:', error);
-        alert('Failed to update stock. Please try again.');
+        alert(`Failed to update stock: ${error.message}\nPlease try again.`);
     }
 }
 
@@ -899,7 +910,7 @@ async function quickStockUpdate(itemId, currentStock) {
 let selectedImageUrl = '';
 
 function showImageUploadOptions() {
-    document.getElementById('imageUploadModal').style.display = 'block';
+    document.getElementById('imageUploadModal').style.display = 'flex';
     loadSampleImages();
 }
 
@@ -914,71 +925,15 @@ function switchImageTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
     
     // Add active class to selected tab and content
-    event.target.classList.add('active');
+    document.querySelector(`[onclick="switchImageTab('${tabName}')"]`).classList.add('active');
     document.getElementById(tabName + 'Tab').classList.add('active');
 }
 
 function showImageGallery() {
     showImageUploadOptions();
-    switchImageTab('gallery');
-}
-
-// Handle file upload
-document.addEventListener('DOMContentLoaded', function() {
-    const fileInput = document.getElementById('imageFileInput');
-    const uploadArea = document.getElementById('uploadArea');
-    
-    if (fileInput && uploadArea) {
-        fileInput.addEventListener('change', handleFileSelect);
-        
-        // Drag and drop functionality
-        uploadArea.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            uploadArea.classList.add('drag-over');
-        });
-        
-        uploadArea.addEventListener('dragleave', function(e) {
-            e.preventDefault();
-            uploadArea.classList.remove('drag-over');
-        });
-        
-        uploadArea.addEventListener('drop', function(e) {
-            e.preventDefault();
-            uploadArea.classList.remove('drag-over');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                handleFile(files[0]);
-            }
-        });
-    }
-});
-
-function handleFileSelect(e) {
-    const file = e.target.files[0];
-    if (file) {
-        handleFile(file);
-    }
-}
-
-function handleFile(file) {
-    // Validate file
-    if (!file.type.startsWith('image/')) {
-        alert('Please select an image file (JPG, PNG, WebP)');
-        return;
-    }
-    
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        alert('File size must be less than 5MB');
-        return;
-    }
-    
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        selectedImageUrl = e.target.result; // Base64 data URL
-        showImagePreview(selectedImageUrl);
-    };
-    reader.readAsDataURL(file);
+    setTimeout(() => {
+        switchImageTab('gallery');
+    }, 100);
 }
 
 function previewImageUrl() {
@@ -1004,27 +959,31 @@ function showImagePreview(url) {
     const previewSection = document.getElementById('modalImagePreview');
     const previewImg = document.getElementById('modalPreviewImg');
     
-    previewImg.src = url;
-    previewSection.style.display = 'block';
+    if (previewSection && previewImg) {
+        previewImg.src = url;
+        previewSection.style.display = 'block';
+    }
 }
 
 function clearImagePreview() {
     const previewSection = document.getElementById('modalImagePreview');
-    previewSection.style.display = 'none';
+    if (previewSection) {
+        previewSection.style.display = 'none';
+    }
     selectedImageUrl = '';
 }
 
 function useSelectedImage() {
     if (selectedImageUrl) {
         // Set the image URL in the main form
-        document.getElementById('itemImage').value = selectedImageUrl;
-        
-        // Show preview in main form
-        const mainPreview = document.getElementById('imagePreview');
-        const mainPreviewImg = document.getElementById('previewImg');
-        
-        mainPreviewImg.src = selectedImageUrl;
-        mainPreview.style.display = 'block';
+        const imageInput = document.getElementById('itemImage');
+        if (imageInput) {
+            imageInput.value = selectedImageUrl;
+            
+            // Trigger input event to update preview
+            const event = new Event('input', { bubbles: true });
+            imageInput.dispatchEvent(event);
+        }
         
         // Close modal
         closeImageUploadModal();
@@ -1032,30 +991,33 @@ function useSelectedImage() {
 }
 
 function removeImagePreview() {
-    document.getElementById('imagePreview').style.display = 'none';
-    document.getElementById('itemImage').value = '';
+    const preview = document.getElementById('imagePreview');
+    const imageInput = document.getElementById('itemImage');
+    
+    if (preview) preview.style.display = 'none';
+    if (imageInput) imageInput.value = '';
 }
 
 function loadSampleImages() {
     const sampleImages = [
         {
-            name: 'Noodles',
+            name: 'Hakka Noodles',
             url: 'https://images.unsplash.com/photo-1555126634-323283e090fa?w=400&h=300&fit=crop'
         },
         {
-            name: 'Fried Rice',
+            name: 'Veg Fried Rice',
             url: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=400&h=300&fit=crop'
         },
         {
-            name: 'Momos',
+            name: 'Chicken Momos',
             url: 'https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?w=400&h=300&fit=crop'
         },
         {
-            name: 'Rolls',
+            name: 'Chicken Roll',
             url: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?w=400&h=300&fit=crop'
         },
         {
-            name: 'Paratha',
+            name: 'Aloo Paratha',
             url: 'https://images.unsplash.com/photo-1574653853027-5d3ba0c95f5d?w=400&h=300&fit=crop'
         },
         {
@@ -1063,22 +1025,24 @@ function loadSampleImages() {
             url: 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=400&h=300&fit=crop'
         },
         {
-            name: 'Coffee',
+            name: 'Hot Coffee',
             url: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400&h=300&fit=crop'
         },
         {
-            name: 'Snacks',
+            name: 'Mixed Snacks',
             url: 'https://images.unsplash.com/photo-1599490659213-e2b9527bd087?w=400&h=300&fit=crop'
         }
     ];
     
     const grid = document.getElementById('sampleImagesGrid');
-    grid.innerHTML = sampleImages.map(img => `
-        <div class="sample-image-card" onclick="selectSampleImage('${img.url}')">
-            <img src="${img.url}" alt="${img.name}" loading="lazy">
-            <div class="sample-image-name">${img.name}</div>
-        </div>
-    `).join('');
+    if (grid) {
+        grid.innerHTML = sampleImages.map(img => `
+            <div class="sample-image-card" onclick="selectSampleImage('${img.url}')">
+                <img src="${img.url}" alt="${img.name}" loading="lazy">
+                <div class="sample-image-name">${img.name}</div>
+            </div>
+        `).join('');
+    }
 }
 
 function selectSampleImage(url) {
@@ -1086,28 +1050,47 @@ function selectSampleImage(url) {
     showImagePreview(url);
 }
 
-// Update the image preview when URL is typed
-document.addEventListener('DOMContentLoaded', function() {
+// Initialize image preview functionality
+function initializeImagePreview() {
     const imageInput = document.getElementById('itemImage');
     if (imageInput) {
         imageInput.addEventListener('input', function() {
             const url = this.value.trim();
-            if (url && (url.startsWith('http') || url.startsWith('images/'))) {
+            if (url && (url.startsWith('http') || url.startsWith('images/') || url.startsWith('data:'))) {
                 const img = new Image();
                 img.onload = function() {
                     const preview = document.getElementById('imagePreview');
                     const previewImg = document.getElementById('previewImg');
-                    previewImg.src = url;
-                    preview.style.display = 'block';
+                    if (preview && previewImg) {
+                        previewImg.src = url;
+                        preview.style.display = 'block';
+                    }
                 };
                 img.onerror = function() {
-                    document.getElementById('imagePreview').style.display = 'none';
+                    const preview = document.getElementById('imagePreview');
+                    if (preview) {
+                        preview.style.display = 'none';
+                    }
                 };
                 img.src = url;
             } else {
-                document.getElementById('imagePreview').style.display = 'none';
+                const preview = document.getElementById('imagePreview');
+                if (preview) {
+                    preview.style.display = 'none';
+                }
             }
         });
+    }
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializeImagePreview();
+    
+    // Initialize form submission handler
+    const itemForm = document.getElementById('itemForm');
+    if (itemForm) {
+        itemForm.addEventListener('submit', handleItemSubmit);
     }
 });
 
@@ -1206,7 +1189,14 @@ function closeItemModal() {
 async function handleItemSubmit(e) {
     e.preventDefault();
     
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    
     try {
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.textContent = editingItemId ? 'Updating...' : 'Adding...';
+        
         const formData = new FormData(e.target);
         
         const itemData = {
@@ -1225,58 +1215,55 @@ async function handleItemSubmit(e) {
             stockStatus: formData.get('stockStatus') || 'in-stock'
         };
         
-        // Show loading state
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        const originalText = submitBtn.textContent;
-        submitBtn.disabled = true;
-        submitBtn.textContent = editingItemId ? 'Updating...' : 'Adding...';
+        console.log('📝 Submitting item data:', itemData);
+        console.log('🔧 Editing item ID:', editingItemId);
         
+        let response;
         if (editingItemId) {
             // Update existing item
-            await apiClient.updateMenuItem(editingItemId, itemData);
-            alert('Menu item updated successfully!');
+            response = await apiClient.updateMenuItem(editingItemId, itemData);
+            console.log('✅ Update response:', response);
         } else {
             // Add new item
-            await apiClient.addMenuItem(itemData);
-            alert('New menu item added successfully!');
+            response = await apiClient.addMenuItem(itemData);
+            console.log('✅ Add response:', response);
         }
         
-        // Refresh display
-        await loadMenuItems();
-        await loadDashboardData();
-        closeItemModal();
+        if (response && response.success) {
+            alert(editingItemId ? 'Menu item updated successfully!' : 'New menu item added successfully!');
+            
+            // Refresh display
+            await loadMenuItems();
+            await loadDashboardData();
+            closeItemModal();
+        } else {
+            throw new Error(response?.message || 'Operation failed');
+        }
         
     } catch (error) {
         console.error('❌ Failed to save menu item:', error);
         
-        // Handle duplicate item error specifically
-        if (error.message.includes('409') || error.message.includes('already exists')) {
-            const confirmAdd = confirm(
-                `A menu item with this name might already exist in this category.\n\n` +
-                `Error: ${error.message}\n\n` +
-                `Would you like to:\n` +
-                `• Click "OK" to modify the item name and try again\n` +
-                `• Click "Cancel" to check existing items first`
-            );
-            
-            if (confirmAdd) {
-                // Keep the modal open and let user modify the name
-                const nameInput = document.getElementById('itemName');
-                nameInput.focus();
-                nameInput.select();
-            } else {
-                closeItemModal();
-                // Switch to menu management to show existing items
-                showSection('menu');
+        // Handle specific error cases
+        if (error.message && error.message.includes('already exists')) {
+            const useForceAdd = confirm(`${error.message}\n\nWould you like to force add this item anyway?`);
+            if (useForceAdd) {
+                // Retry with force add enabled
+                const forceAddCheckbox = document.getElementById('forceAdd');
+                if (forceAddCheckbox) {
+                    forceAddCheckbox.checked = true;
+                    // Retry submission
+                    setTimeout(() => handleItemSubmit(e), 100);
+                    return;
+                }
             }
         } else {
-            alert('Failed to save menu item: ' + error.message);
+            alert(`Failed to save menu item: ${error.message}`);
         }
         
+    } finally {
         // Reset button state
-        const submitBtn = e.target.querySelector('button[type="submit"]');
         submitBtn.disabled = false;
-        submitBtn.textContent = editingItemId ? 'Save Changes' : 'Add Item';
+        submitBtn.textContent = originalText;
     }
 }
 
