@@ -796,10 +796,12 @@ function displayMenuItems(menuItems) {
         <div class="menu-item-card">
             <div class="menu-item-image">
                 <img src="${item.image || 'images/default-food.jpg'}" alt="${item.name}" onerror="this.src='images/default-food.jpg'">
-                <div class="item-status-badges">
+                <div class="item-status-badges-left">
                     <button class="availability-toggle ${item.available ? 'available' : 'unavailable'}" onclick="toggleAvailability('${item.id}')">
                         ${item.available ? 'Available' : 'Unavailable'}
                     </button>
+                </div>
+                <div class="item-status-badges-right">
                     <span class="stock-badge ${item.stockStatus || 'in-stock'}">
                         ${getStockStatusText(item.stockStatus || 'in-stock')}
                     </span>
