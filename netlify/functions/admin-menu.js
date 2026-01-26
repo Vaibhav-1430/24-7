@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema({
     isAdmin: { type: Boolean, default: false }
 }, { timestamps: true });
 
-// Menu Item Schema - matching existing menu.js schema
+// Menu Item Schema - matching existing menu.js schema with stock management
 const menuItemSchema = new mongoose.Schema({
     name: { type: String, required: true, trim: true },
     description: { type: String, required: true, trim: true },
@@ -27,6 +27,15 @@ const menuItemSchema = new mongoose.Schema({
     popular: { type: Boolean, default: false },
     isVeg: { type: Boolean, default: true },
     spiceLevel: { type: String, enum: ['Mild', 'Medium', 'Spicy'], default: 'Medium' },
+    // Stock Management Fields
+    inStock: { type: Boolean, default: true },
+    stockQuantity: { type: Number, default: 100, min: 0 },
+    lowStockThreshold: { type: Number, default: 10, min: 0 },
+    stockStatus: { 
+        type: String, 
+        enum: ['in-stock', 'low-stock', 'out-of-stock'], 
+        default: 'in-stock' 
+    },
     createdBy: { type: String },
     updatedBy: { type: String }
 }, { timestamps: true });
@@ -174,6 +183,11 @@ exports.handler = async (event, context) => {
                 popular: item.popular,
                 isVeg: item.isVeg,
                 spiceLevel: item.spiceLevel,
+                // Stock Management Fields
+                inStock: item.inStock !== undefined ? item.inStock : true,
+                stockQuantity: item.stockQuantity !== undefined ? item.stockQuantity : 100,
+                lowStockThreshold: item.lowStockThreshold !== undefined ? item.lowStockThreshold : 10,
+                stockStatus: item.stockStatus || 'in-stock',
                 createdAt: item.createdAt,
                 updatedAt: item.updatedAt
             }));
@@ -240,6 +254,11 @@ exports.handler = async (event, context) => {
                 popular: itemData.popular || false,
                 isVeg: itemData.isVeg !== false,
                 spiceLevel: itemData.spiceLevel || 'Medium',
+                // Stock Management Fields
+                inStock: itemData.inStock !== false,
+                stockQuantity: itemData.stockQuantity || 100,
+                lowStockThreshold: itemData.lowStockThreshold || 10,
+                stockStatus: itemData.stockStatus || 'in-stock',
                 createdBy: user.email
             });
 
@@ -284,6 +303,11 @@ exports.handler = async (event, context) => {
             if (updateData.popular !== undefined) dbUpdateData.popular = updateData.popular;
             if (updateData.isVeg !== undefined) dbUpdateData.isVeg = updateData.isVeg;
             if (updateData.spiceLevel) dbUpdateData.spiceLevel = updateData.spiceLevel;
+            // Stock Management Fields
+            if (updateData.inStock !== undefined) dbUpdateData.inStock = updateData.inStock;
+            if (updateData.stockQuantity !== undefined) dbUpdateData.stockQuantity = updateData.stockQuantity;
+            if (updateData.lowStockThreshold !== undefined) dbUpdateData.lowStockThreshold = updateData.lowStockThreshold;
+            if (updateData.stockStatus) dbUpdateData.stockStatus = updateData.stockStatus;
 
             const result = await MenuItem.updateOne(
                 { _id: itemId },

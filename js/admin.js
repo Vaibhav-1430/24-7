@@ -751,6 +751,10 @@ async function loadMenuItems() {
         console.log('🍽️ Loading menu items...');
         const response = await apiClient.getAdminMenuItems();
         const menuItems = response.menuItems || [];
+        
+        // Store current menu items for editing
+        currentMenuItems = menuItems;
+        
         displayMenuItems(menuItems);
     } catch (error) {
         console.error('❌ Failed to load menu items:', error);
@@ -792,9 +796,14 @@ function displayMenuItems(menuItems) {
         <div class="menu-item-card">
             <div class="menu-item-image">
                 <img src="${item.image || 'images/default-food.jpg'}" alt="${item.name}" onerror="this.src='images/default-food.jpg'">
-                <button class="availability-toggle ${item.available ? 'available' : 'unavailable'}" onclick="toggleAvailability('${item.id}')">
-                    ${item.available ? 'Available' : 'Unavailable'}
-                </button>
+                <div class="item-status-badges">
+                    <button class="availability-toggle ${item.available ? 'available' : 'unavailable'}" onclick="toggleAvailability('${item.id}')">
+                        ${item.available ? 'Available' : 'Unavailable'}
+                    </button>
+                    <span class="stock-badge ${item.stockStatus || 'in-stock'}">
+                        ${getStockStatusText(item.stockStatus || 'in-stock')}
+                    </span>
+                </div>
             </div>
             <div class="menu-item-content">
                 <div class="menu-item-name">${item.name}</div>
@@ -804,10 +813,21 @@ function displayMenuItems(menuItems) {
                     <div class="menu-item-price">₹${item.price}</div>
                     ${item.halfPrice ? `<div class="menu-item-half-price">Half: ₹${item.halfPrice}</div>` : ''}
                 </div>
+                <div class="stock-info">
+                    <div class="stock-quantity">
+                        <i class="fas fa-boxes"></i>
+                        Stock: ${item.stockQuantity || 0}
+                        ${(item.stockQuantity || 0) <= (item.lowStockThreshold || 10) ? '<i class="fas fa-exclamation-triangle" style="color: #f39c12; margin-left: 5px;"></i>' : ''}
+                    </div>
+                    <button class="stock-update-btn" onclick="quickStockUpdate('${item.id}', ${item.stockQuantity || 0})">
+                        <i class="fas fa-edit"></i> Update Stock
+                    </button>
+                </div>
                 <div class="menu-item-footer">
                     <div class="menu-item-badges">
                         ${item.isVeg ? '<span class="veg-badge">🟢 Veg</span>' : '<span class="non-veg-badge">🔴 Non-Veg</span>'}
                         ${item.popular ? '<span class="popular-badge">⭐ Popular</span>' : ''}
+                        ${!(item.inStock !== false) ? '<span class="out-of-stock-badge">❌ Out of Stock</span>' : ''}
                     </div>
                     <div class="menu-item-actions">
                         <button class="edit-btn" onclick="editMenuItem('${item.id}')">
@@ -821,6 +841,58 @@ function displayMenuItems(menuItems) {
             </div>
         </div>
     `).join('');
+}
+
+// Helper function to get stock status text
+function getStockStatusText(status) {
+    switch(status) {
+        case 'in-stock': return '✅ In Stock';
+        case 'low-stock': return '⚠️ Low Stock';
+        case 'out-of-stock': return '❌ Out of Stock';
+        default: return '✅ In Stock';
+    }
+}
+
+// Quick stock update function
+async function quickStockUpdate(itemId, currentStock) {
+    const newStock = prompt(`Update stock quantity for this item:\n\nCurrent stock: ${currentStock}`, currentStock);
+    
+    if (newStock === null) return; // User cancelled
+    
+    const stockQuantity = parseInt(newStock);
+    if (isNaN(stockQuantity) || stockQuantity < 0) {
+        alert('Please enter a valid stock quantity (0 or greater)');
+        return;
+    }
+    
+    try {
+        // Determine stock status based on quantity
+        let stockStatus = 'in-stock';
+        const lowStockThreshold = 10; // Default threshold
+        
+        if (stockQuantity === 0) {
+            stockStatus = 'out-of-stock';
+        } else if (stockQuantity <= lowStockThreshold) {
+            stockStatus = 'low-stock';
+        }
+        
+        const response = await apiClient.updateMenuItem(itemId, {
+            stockQuantity: stockQuantity,
+            stockStatus: stockStatus,
+            inStock: stockQuantity > 0
+        });
+        
+        if (response.success) {
+            alert(`Stock updated successfully!\nNew stock: ${stockQuantity}`);
+            await loadMenuItems(); // Refresh the display
+        } else {
+            throw new Error(response.message || 'Failed to update stock');
+        }
+        
+    } catch (error) {
+        console.error('❌ Failed to update stock:', error);
+        alert('Failed to update stock. Please try again.');
+    }
 }
 
 async function loadAnalytics() {
@@ -868,6 +940,13 @@ function openAddItemModal() {
     document.getElementById('modalTitle').textContent = 'Add New Item';
     document.getElementById('itemForm').reset();
     document.getElementById('forceAdd').checked = false; // Reset force add option
+    
+    // Reset stock management fields to defaults
+    document.getElementById('inStock').checked = true;
+    document.getElementById('stockQuantity').value = 100;
+    document.getElementById('lowStockThreshold').value = 10;
+    document.getElementById('stockStatus').value = 'in-stock';
+    
     document.getElementById('itemModal').style.display = 'block';
 }
 
@@ -888,6 +967,12 @@ async function editMenuItem(itemId) {
             document.getElementById('itemImage').value = item.image || '';
             document.getElementById('itemAvailable').checked = item.available;
             document.getElementById('itemPopular').checked = item.popular || false;
+            
+            // Populate stock management fields
+            document.getElementById('inStock').checked = item.inStock !== false;
+            document.getElementById('stockQuantity').value = item.stockQuantity || 100;
+            document.getElementById('lowStockThreshold').value = item.lowStockThreshold || 10;
+            document.getElementById('stockStatus').value = item.stockStatus || 'in-stock';
             
             document.getElementById('itemModal').style.display = 'block';
         }
@@ -916,7 +1001,12 @@ async function handleItemSubmit(e) {
             image: formData.get('image') || 'images/placeholder.jpg',
             available: formData.get('available') === 'on',
             popular: formData.get('popular') === 'on',
-            forceAdd: formData.get('forceAdd') === 'on'
+            forceAdd: formData.get('forceAdd') === 'on',
+            // Stock Management Fields
+            inStock: formData.get('inStock') === 'on',
+            stockQuantity: parseInt(formData.get('stockQuantity')) || 100,
+            lowStockThreshold: parseInt(formData.get('lowStockThreshold')) || 10,
+            stockStatus: formData.get('stockStatus') || 'in-stock'
         };
         
         // Show loading state
@@ -1043,6 +1133,7 @@ window.editMenuItem = editMenuItem;
 window.closeItemModal = closeItemModal;
 window.toggleAvailability = toggleAvailability;
 window.deleteMenuItem = deleteMenuItem;
+window.quickStockUpdate = quickStockUpdate;
 
 // Test function for debugging orders API
 window.testOrdersAPI = async function() {
