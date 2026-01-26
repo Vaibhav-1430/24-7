@@ -113,46 +113,188 @@
     margin: -10px 0 10px;
 }
 
-.checkbox-container {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    font-size: 0.9rem;
-    color: #666;
-    margin: 10px 0;
+/* Clean Terms & Conditions Checkbox */
+.terms-section {
+    margin: 20px 0;
+    padding: 0;
 }
 
-.checkbox-container input {
+.terms-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.terms-checkbox:hover {
+    border-color: #e74c3c;
+    background: white;
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.1);
+}
+
+.terms-checkbox input[type="checkbox"] {
     display: none;
 }
 
-.checkmark {
+.checkmark-simple {
     width: 20px;
     height: 20px;
     border: 2px solid #ddd;
     border-radius: 4px;
-    margin-right: 12px;
-    position: relative;
-    transition: all 0.3s;
-    flex-shrink: 0;
     background: white;
+    position: relative;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+    margin-top: 2px;
 }
 
-.checkbox-container input:checked + .checkmark {
+.terms-checkbox:hover .checkmark-simple {
+    border-color: #e74c3c;
+}
+
+.terms-checkbox input:checked + .checkmark-simple {
     background: #e74c3c;
     border-color: #e74c3c;
 }
 
-.checkbox-container input:checked + .checkmark::after {
+.terms-checkbox input:checked + .checkmark-simple::after {
     content: '';
     position: absolute;
     left: 6px;
     top: 2px;
-    width: 5px;
+    width: 6px;
     height: 10px;
     border: solid white;
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
+}
+
+.terms-text {
+    color: #666;
+    flex: 1;
+}
+
+.terms-link {
+    color: #e74c3c;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.terms-link:hover {
+    text-decoration: underline;
+}
+
+/* Simplified Progress Bar */
+.signup-progress {
+    margin-bottom: 20px;
+    background: #f0f0f0;
+    border-radius: 10px;
+    overflow: hidden;
+    height: 4px;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #e74c3c, #f39c12);
+    width: 0%;
+    transition: width 0.5s ease;
+    border-radius: 10px;
+}
+
+.progress-text {
+    text-align: center;
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: #666;
+    font-weight: 500;
+}
+
+/* Clean Form Fields */
+.form-group {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px 40px 12px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #e74c3c;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+}
+
+.form-icon {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+    font-size: 1rem;
+    margin-top: 12px;
+}
+
+/* Password Strength - Simplified */
+.password-strength {
+    margin-top: 8px;
+    height: 3px;
+    background: #f0f0f0;
+    border-radius: 2px;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.password-strength.visible {
+    opacity: 1;
+}
+
+.strength-bar {
+    height: 100%;
+    width: 0%;
+    transition: all 0.3s ease;
+    border-radius: 2px;
+}
+
+.strength-weak { background: #e74c3c; }
+.strength-medium { background: #f39c12; }
+.strength-strong { background: #27ae60; }
+
+.password-strength-text {
+    font-size: 0.75rem;
+    margin-top: 4px;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.password-strength-text.visible {
+    opacity: 1;
 }
 
 .forgot-password {
@@ -414,4 +556,81 @@
         padding: 12px;
         font-size: 1rem;
     }
+}
+/* Simplified Interactive Features */
+
+/* Clean Form Focus States */
+.form-group input:focus,
+.form-group select:focus {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.15);
+}
+
+/* Simple Progress Bar */
+.signup-progress {
+    margin-bottom: 25px;
+    background: #f0f0f0;
+    border-radius: 10px;
+    overflow: hidden;
+    height: 4px;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #e74c3c, #f39c12);
+    width: 0%;
+    transition: width 0.5s ease;
+    border-radius: 10px;
+}
+
+.progress-text {
+    text-align: center;
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: #666;
+    font-weight: 500;
+}
+
+/* Clean Button Hover */
+.auth-btn:not(:disabled):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(231, 76, 60, 0.25);
+}
+
+/* Simple Password Strength */
+.password-strength {
+    margin-top: 8px;
+    height: 3px;
+    background: #f0f0f0;
+    border-radius: 2px;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.password-strength.visible {
+    opacity: 1;
+}
+
+.strength-bar {
+    height: 100%;
+    width: 0%;
+    transition: all 0.3s ease;
+    border-radius: 2px;
+}
+
+.strength-weak { background: #e74c3c; }
+.strength-medium { background: #f39c12; }
+.strength-strong { background: #27ae60; }
+
+.password-strength-text {
+    font-size: 0.75rem;
+    margin-top: 4px;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.password-strength-text.visible {
+    opacity: 1;
 }

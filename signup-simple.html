@@ -29,6 +29,125 @@
         .demo-btn:hover { background: #2980b9; }
         .back-link { text-align: center; margin-top: 20px; }
         .back-link a { color: #e74c3c; text-decoration: none; }
+        
+        /* Success Modal */
+        .success-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .success-modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .success-modal {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transform: scale(0.8) translateY(50px);
+            transition: all 0.3s ease;
+        }
+
+        .success-modal-overlay.show .success-modal {
+            transform: scale(1) translateY(0);
+        }
+
+        .checkmark-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #27ae60, #2ecc71);
+            margin: 0 auto 30px;
+            position: relative;
+            animation: scaleIn 0.6s ease-out;
+        }
+
+        @keyframes scaleIn {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .checkmark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 30px;
+            height: 15px;
+            border: 3px solid white;
+            border-top: none;
+            border-right: none;
+            transform: translate(-50%, -60%) rotate(-45deg);
+            animation: checkmarkDraw 0.4s ease-out 0.3s both;
+        }
+
+        @keyframes checkmarkDraw {
+            0% { width: 0; height: 0; }
+            50% { width: 30px; height: 0; }
+            100% { width: 30px; height: 15px; }
+        }
+
+        .success-content h2 {
+            color: #2c3e50;
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .success-message {
+            color: #27ae60;
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 25px;
+        }
+
+        .user-info {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .user-info p {
+            margin: 8px 0;
+            color: #2c3e50;
+        }
+
+        .redirect-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: #7f8c8d;
+            font-size: 0.95rem;
+        }
+
+        .redirect-info i {
+            color: #e74c3c;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
     </style>
 </head>
 <body>
@@ -95,9 +214,9 @@
             </div>
             
             <div class="form-group">
-                <label style="display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer;">
-                    <input type="checkbox" id="agreeTerms" required style="width: auto; margin: 0;">
-                    I agree to the <a href="#" style="color: #e74c3c; text-decoration: none;">Terms & Conditions</a>
+                <label style="display: flex; align-items: center; gap: 10px; font-size: 14px; cursor: pointer; padding: 15px; border: 2px solid #e0e0e0; border-radius: 8px; background: #f8f9fa; transition: all 0.3s ease;">
+                    <input type="checkbox" id="agreeTerms" required style="width: 20px; height: 20px; margin: 0; accent-color: #e74c3c;">
+                    <span>I agree to the <a href="#" style="color: #e74c3c; text-decoration: underline;">Terms & Conditions</a></span>
                 </label>
             </div>
             
@@ -139,6 +258,36 @@
             submitBtn.disabled = loading;
             submitBtn.classList.toggle('loading', loading);
             btnText.textContent = loading ? 'Creating Account...' : 'Create Account';
+        }
+
+        function showSuccessModal(user) {
+            const modalHTML = `
+                <div class="success-modal-overlay" id="successModal">
+                    <div class="success-modal">
+                        <div class="checkmark-circle">
+                            <div class="checkmark"></div>
+                        </div>
+                        <div class="success-content">
+                            <h2>🎉 Welcome to 24x7 Cafe!</h2>
+                            <p class="success-message">Your account has been created successfully!</p>
+                            <div class="user-info">
+                                <p><strong>Welcome, ${user.firstName} ${user.lastName}!</strong></p>
+                                <p>You are now logged in and ready to order delicious food.</p>
+                            </div>
+                            <div class="redirect-info">
+                                <i class="fas fa-home"></i>
+                                <span>Redirecting to home page...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            setTimeout(() => {
+                document.getElementById('successModal').classList.add('show');
+            }, 100);
         }
 
         function fillDemoData() {
@@ -200,7 +349,8 @@
                 
                 const result = await authManagerClean.signup(userData);
                 
-                showMessage(`🎉 Account created successfully! You are now logged in. Welcome ${result.fullName}! Redirecting to home...`, 'success');
+                // Show success modal
+                showSuccessModal(result);
                 
                 setTimeout(() => {
                     window.location.href = 'index.html';
