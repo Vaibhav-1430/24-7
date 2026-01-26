@@ -598,7 +598,7 @@ body {
     gap: 8px;
 }
 
-/* Stock Management Styles */
+/* Stock Management Styles - Fixed Overlapping */
 .item-status-badges {
     position: absolute;
     top: 10px;
@@ -606,10 +606,11 @@ body {
     display: flex;
     flex-direction: column;
     gap: 5px;
+    z-index: 2;
 }
 
 .availability-toggle {
-    background: rgba(0,0,0,0.7);
+    background: rgba(0,0,0,0.8);
     color: white;
     border: none;
     padding: 5px 10px;
@@ -617,6 +618,7 @@ body {
     font-size: 0.8rem;
     cursor: pointer;
     transition: all 0.3s;
+    white-space: nowrap;
 }
 
 .availability-toggle.available {
@@ -633,6 +635,7 @@ body {
     font-size: 0.7rem;
     font-weight: 600;
     text-align: center;
+    white-space: nowrap;
 }
 
 .stock-badge.in-stock {
@@ -651,13 +654,14 @@ body {
 }
 
 .stock-info {
-    padding: 10px 15px;
+    padding: 12px 15px;
     background: #f8f9fa;
     border-top: 1px solid #e9ecef;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 10px;
+    margin-top: 15px;
+    border-radius: 0 0 12px 12px;
 }
 
 .stock-quantity {
@@ -672,7 +676,7 @@ body {
     background: #17a2b8;
     color: white;
     border: none;
-    padding: 5px 10px;
+    padding: 6px 12px;
     border-radius: 5px;
     font-size: 0.8rem;
     cursor: pointer;
@@ -683,13 +687,83 @@ body {
     background: #138496;
 }
 
-.out-of-stock-badge {
-    background: #f8d7da;
-    color: #721c24;
-    padding: 2px 8px;
+.menu-item-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 15px;
+    gap: 10px;
+}
+
+.menu-item-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+}
+
+.menu-item-badges span {
+    padding: 3px 8px;
     border-radius: 12px;
     font-size: 0.7rem;
     font-weight: 600;
+    white-space: nowrap;
+}
+
+.veg-badge {
+    background: #d4edda;
+    color: #155724;
+}
+
+.non-veg-badge {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.popular-badge {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.out-of-stock-badge {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.menu-item-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.edit-btn, .delete-btn {
+    width: 35px;
+    height: 35px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.edit-btn {
+    background: #17a2b8;
+    color: white;
+}
+
+.edit-btn:hover {
+    background: #138496;
+}
+
+.delete-btn {
+    background: #e74c3c;
+    color: white;
+}
+
+.delete-btn:hover {
+    background: #c0392b;
 }
 
 /* Form Section Styles */
@@ -775,7 +849,7 @@ body {
     line-height: 1.4;
 }
 
-/* Image Upload Modal Styles */
+/* Image Upload Modal Styles - Consolidated */
 .modal {
     position: fixed;
     top: 0;
@@ -786,7 +860,53 @@ body {
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: 10000;
+    z-index: 999999;
+    padding: 20px;
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+}
+
+.modal.show {
+    display: flex !important;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 700px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.close {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #999;
+    cursor: pointer;
+    z-index: 1;
+    line-height: 1;
+}
+
+.close:hover {
+    color: #333;
+}
+
+.modal-header {
+    margin-bottom: 25px;
+    padding-right: 40px;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 1.5rem;
 }
 
 .modal-content {
@@ -839,31 +959,44 @@ body {
     background: #f8f9fa;
     transition: all 0.3s;
     cursor: pointer;
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
 }
 
 .upload-area:hover, .upload-area.drag-over {
     background: #e3f2fd;
     border-color: #0277bd;
+    transform: translateY(-2px);
 }
 
 .upload-area i {
     font-size: 3rem;
     color: #17a2b8;
-    margin-bottom: 15px;
 }
 
 .upload-area p {
     color: #6c757d;
-    margin-bottom: 15px;
+    margin: 0;
+    font-size: 1rem;
 }
 
 .upload-area button {
     background: #17a2b8;
     color: white;
     border: none;
-    padding: 10px 20px;
+    padding: 12px 24px;
     border-radius: 5px;
     cursor: pointer;
+    font-size: 1rem;
+    transition: background 0.3s;
+}
+
+.upload-area button:hover {
+    background: #138496;
 }
 
 .upload-instructions {
@@ -1179,80 +1312,7 @@ body {
     transform: translateY(-2px);
 }
 
-/* Enhanced Modal Styles - Primary Implementation */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 10000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-}
 
-.modal-content {
-    background-color: white;
-    margin: 5% auto;
-    padding: 0;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 600px;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    position: relative;
-    animation: modalSlideIn 0.3s ease-out;
-}
-
-@keyframes modalSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-50px) scale(0.9);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-.modal .close {
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    color: #999;
-    font-size: 28px;
-    font-weight: 300;
-    cursor: pointer;
-    z-index: 1;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: all 0.3s;
-}
-
-.modal .close:hover {
-    color: #333;
-    background: rgba(0, 0, 0, 0.1);
-    transform: rotate(90deg);
-}
-
-.modal-header {
-    padding: 25px 30px 20px;
-    border-bottom: 1px solid #f0f0f0;
-    background: linear-gradient(135deg, #f8f9fa, #ffffff);
-}
-
-.modal-header h3 {
-    margin: 0;
-    color: #333;
-    font-size: 1.4rem;
-    font-weight: 600;
-}
 
 /* Enhanced Item Form Styles - Primary Implementation */
 .item-form {

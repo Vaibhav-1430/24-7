@@ -283,13 +283,32 @@ exports.handler = async (event, context) => {
                 return {
                     statusCode: 400,
                     headers,
-                    body: JSON.stringify({ error: 'Item ID is required' })
+                    body: JSON.stringify({ 
+                        success: false,
+                        error: 'Item ID is required' 
+                    })
+                };
+            }
+
+            console.log('🔄 Updating menu item:', itemId);
+            console.log('📝 Update data:', updateData);
+
+            // Validate ObjectId format
+            if (!mongoose.Types.ObjectId.isValid(itemId)) {
+                return {
+                    statusCode: 400,
+                    headers,
+                    body: JSON.stringify({ 
+                        success: false,
+                        error: 'Invalid item ID format' 
+                    })
                 };
             }
 
             // Transform update data to match database schema
             const dbUpdateData = {
-                updatedBy: user.email
+                updatedBy: user.email,
+                updatedAt: new Date()
             };
 
             // Map admin interface fields to database fields
@@ -309,27 +328,46 @@ exports.handler = async (event, context) => {
             if (updateData.lowStockThreshold !== undefined) dbUpdateData.lowStockThreshold = updateData.lowStockThreshold;
             if (updateData.stockStatus) dbUpdateData.stockStatus = updateData.stockStatus;
 
-            const result = await MenuItem.updateOne(
-                { _id: itemId },
-                { $set: dbUpdateData }
-            );
+            console.log('💾 Database update data:', dbUpdateData);
 
-            if (result.matchedCount === 0) {
+            try {
+                const result = await MenuItem.updateOne(
+                    { _id: new mongoose.Types.ObjectId(itemId) },
+                    { $set: dbUpdateData }
+                );
+
+                console.log('✅ Update result:', result);
+
+                if (result.matchedCount === 0) {
+                    return {
+                        statusCode: 404,
+                        headers,
+                        body: JSON.stringify({ 
+                            success: false,
+                            error: 'Menu item not found' 
+                        })
+                    };
+                }
+
                 return {
-                    statusCode: 404,
+                    statusCode: 200,
                     headers,
-                    body: JSON.stringify({ error: 'Menu item not found' })
+                    body: JSON.stringify({
+                        success: true,
+                        message: 'Menu item updated successfully'
+                    })
+                };
+            } catch (updateError) {
+                console.error('❌ Update error:', updateError);
+                return {
+                    statusCode: 500,
+                    headers,
+                    body: JSON.stringify({ 
+                        success: false,
+                        error: 'Failed to update menu item: ' + updateError.message 
+                    })
                 };
             }
-
-            return {
-                statusCode: 200,
-                headers,
-                body: JSON.stringify({
-                    success: true,
-                    message: 'Menu item updated successfully'
-                })
-            };
         }
 
         if (event.httpMethod === 'DELETE') {

@@ -910,13 +910,23 @@ async function quickStockUpdate(itemId, currentStock) {
 let selectedImageUrl = '';
 
 function showImageUploadOptions() {
-    document.getElementById('imageUploadModal').style.display = 'flex';
-    loadSampleImages();
+    const modal = document.getElementById('imageUploadModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('show');
+        loadSampleImages();
+        console.log('📸 Image upload modal opened');
+    }
 }
 
 function closeImageUploadModal() {
-    document.getElementById('imageUploadModal').style.display = 'none';
-    clearImagePreview();
+    const modal = document.getElementById('imageUploadModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('show');
+        clearImagePreview();
+        console.log('📸 Image upload modal closed');
+    }
 }
 
 function switchImageTab(tabName) {
@@ -1050,7 +1060,7 @@ function selectSampleImage(url) {
     showImagePreview(url);
 }
 
-// Initialize image preview functionality
+// Initialize image preview functionality and file upload
 function initializeImagePreview() {
     const imageInput = document.getElementById('itemImage');
     if (imageInput) {
@@ -1081,6 +1091,78 @@ function initializeImagePreview() {
             }
         });
     }
+    
+    // Initialize file upload functionality
+    const fileInput = document.getElementById('imageFileInput');
+    const uploadArea = document.getElementById('uploadArea');
+    
+    if (fileInput) {
+        fileInput.addEventListener('change', handleFileSelect);
+    }
+    
+    if (uploadArea) {
+        // Make upload area clickable
+        uploadArea.addEventListener('click', function() {
+            if (fileInput) {
+                fileInput.click();
+            }
+        });
+        
+        // Drag and drop functionality
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+        
+        uploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+        });
+        
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+    }
+}
+
+function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (file) {
+        handleFile(file);
+    }
+}
+
+function handleFile(file) {
+    console.log('📁 Processing file:', file.name, file.type, file.size);
+    
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+        alert('Please select an image file (JPG, PNG, WebP)');
+        return;
+    }
+    
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        alert('File size must be less than 5MB');
+        return;
+    }
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        console.log('📸 File loaded successfully');
+        selectedImageUrl = e.target.result; // Base64 data URL
+        showImagePreview(selectedImageUrl);
+    };
+    reader.onerror = function() {
+        console.error('❌ Failed to read file');
+        alert('Failed to read the selected file');
+    };
+    reader.readAsDataURL(file);
 }
 
 // Initialize when DOM is loaded

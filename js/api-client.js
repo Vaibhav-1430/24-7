@@ -521,11 +521,17 @@ class APIClient {
     }
 
     async updateMenuItem(itemId, itemData) {
+        console.log('🔄 API Client: Updating menu item', itemId, itemData);
+        
         const response = await this.request('/admin-menu', {
             method: 'PUT',
             body: JSON.stringify({ itemId, ...itemData })
         });
-        return response.data;
+        
+        console.log('✅ API Client: Update response', response);
+        
+        // Return the full response, not just response.data
+        return response;
     }
 
     async deleteMenuItem(itemId) {
