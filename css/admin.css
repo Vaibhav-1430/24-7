@@ -598,11 +598,11 @@ body {
     gap: 8px;
 }
 
-/* Stock Management Styles - Fixed Overlapping */
+/* Stock Management Styles - Fixed Positioning */
 .item-status-badges {
     position: absolute;
     top: 10px;
-    right: 10px;
+    left: 10px;
     display: flex;
     flex-direction: column;
     gap: 5px;
@@ -613,12 +613,13 @@ body {
     background: rgba(0,0,0,0.8);
     color: white;
     border: none;
-    padding: 5px 10px;
+    padding: 6px 12px;
     border-radius: 15px;
     font-size: 0.8rem;
     cursor: pointer;
     transition: all 0.3s;
     white-space: nowrap;
+    font-weight: 600;
 }
 
 .availability-toggle.available {
@@ -806,6 +807,21 @@ body {
 
 .upload-btn:hover, .browse-btn:hover {
     background: #138496;
+}
+
+.remove-image-btn-main {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.3s;
+}
+
+.remove-image-btn-main:hover {
+    background: #c0392b;
 }
 
 .image-preview {
@@ -1819,5 +1835,188 @@ input:checked + .slider:before {
         flex-direction: column;
         align-items: flex-start;
         gap: 5px;
+    }
+}
+
+/* Mobile-Friendly Admin Portal */
+@media (max-width: 768px) {
+    .admin-layout {
+        flex-direction: column;
+    }
+    
+    .admin-sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        order: 2;
+    }
+    
+    .sidebar-menu {
+        display: flex;
+        overflow-x: auto;
+        padding: 10px;
+        gap: 10px;
+    }
+    
+    .menu-item {
+        min-width: 120px;
+        text-align: center;
+        padding: 10px 15px;
+        white-space: nowrap;
+    }
+    
+    .menu-item span {
+        display: block;
+        font-size: 0.8rem;
+        margin-top: 5px;
+    }
+    
+    .admin-main {
+        margin-left: 0;
+        padding: 15px;
+        order: 1;
+    }
+    
+    .admin-navbar {
+        padding: 10px 15px;
+    }
+    
+    .admin-nav-container {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .admin-nav-menu {
+        justify-content: center;
+        gap: 15px;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .section-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+    
+    .menu-items-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .menu-item-card {
+        max-width: 100%;
+    }
+    
+    .order-filters {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .filter-btn {
+        font-size: 0.8rem;
+        padding: 8px 12px;
+    }
+    
+    .modal-content {
+        margin: 10px;
+        width: calc(100% - 20px);
+        max-height: 90vh;
+        padding: 20px;
+    }
+    
+    .form-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .image-upload-options {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .upload-btn, .browse-btn {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-main {
+        padding: 10px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-card {
+        padding: 15px;
+    }
+    
+    .menu-item-footer {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    
+    .menu-item-actions {
+        justify-content: center;
+    }
+    
+    .stock-info {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+    
+    .modal-content {
+        padding: 15px;
+    }
+    
+    .sample-images-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+/* Mobile Menu Toggle */
+.mobile-menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 10px;
+}
+
+@media (max-width: 768px) {
+    .mobile-menu-toggle {
+        display: block;
+    }
+    
+    .admin-nav-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #2c3e50;
+        flex-direction: column;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .admin-nav-menu.mobile-active {
+        display: flex;
+    }
+    
+    .admin-nav-container {
+        position: relative;
     }
 }

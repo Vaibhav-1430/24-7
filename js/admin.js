@@ -1008,6 +1008,27 @@ function removeImagePreview() {
     if (imageInput) imageInput.value = '';
 }
 
+function removeItemImage() {
+    const imageInput = document.getElementById('itemImage');
+    const preview = document.getElementById('imagePreview');
+    
+    if (confirm('Are you sure you want to remove the image from this item?')) {
+        if (imageInput) {
+            imageInput.value = 'images/default-food.jpg'; // Set to default image
+            
+            // Trigger input event to update preview
+            const event = new Event('input', { bubbles: true });
+            imageInput.dispatchEvent(event);
+        }
+        
+        if (preview) {
+            preview.style.display = 'none';
+        }
+        
+        console.log('📸 Image removed, set to default');
+    }
+}
+
 function loadSampleImages() {
     const sampleImages = [
         {
@@ -1228,43 +1249,93 @@ function openAddItemModal() {
     document.getElementById('lowStockThreshold').value = 10;
     document.getElementById('stockStatus').value = 'in-stock';
     
-    document.getElementById('itemModal').style.display = 'block';
+    // Hide image preview
+    const preview = document.getElementById('imagePreview');
+    if (preview) {
+        preview.style.display = 'none';
+    }
+    
+    // Show modal
+    const modal = document.getElementById('itemModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('show');
+        console.log('✅ Add item modal opened');
+    }
 }
 
 async function editMenuItem(itemId) {
     try {
+        console.log('✏️ Editing menu item:', itemId);
+        console.log('📋 Current menu items:', currentMenuItems);
+        
         // Find item in current menu items
         const item = currentMenuItems.find(item => item.id === itemId);
         
-        if (item) {
-            editingItemId = itemId;
-            document.getElementById('modalTitle').textContent = 'Edit Menu Item';
-            
-            // Populate form
-            document.getElementById('itemName').value = item.name;
-            document.getElementById('itemDescription').value = item.description;
-            document.getElementById('itemPrice').value = item.price;
-            document.getElementById('itemCategory').value = item.category;
-            document.getElementById('itemImage').value = item.image || '';
-            document.getElementById('itemAvailable').checked = item.available;
-            document.getElementById('itemPopular').checked = item.popular || false;
-            
-            // Populate stock management fields
-            document.getElementById('inStock').checked = item.inStock !== false;
-            document.getElementById('stockQuantity').value = item.stockQuantity || 100;
-            document.getElementById('lowStockThreshold').value = item.lowStockThreshold || 10;
-            document.getElementById('stockStatus').value = item.stockStatus || 'in-stock';
-            
-            document.getElementById('itemModal').style.display = 'block';
+        if (!item) {
+            console.error('❌ Item not found in current menu items');
+            alert('Item not found. Please refresh the page and try again.');
+            return;
         }
+        
+        console.log('📝 Found item to edit:', item);
+        
+        editingItemId = itemId;
+        document.getElementById('modalTitle').textContent = 'Edit Menu Item';
+        
+        // Populate form fields
+        document.getElementById('itemName').value = item.name || '';
+        document.getElementById('itemDescription').value = item.description || '';
+        document.getElementById('itemPrice').value = item.price || '';
+        document.getElementById('itemCategory').value = item.category || '';
+        document.getElementById('itemImage').value = item.image || '';
+        document.getElementById('itemAvailable').checked = item.available !== false;
+        document.getElementById('itemPopular').checked = item.popular || false;
+        
+        // Populate stock management fields
+        document.getElementById('inStock').checked = item.inStock !== false;
+        document.getElementById('stockQuantity').value = item.stockQuantity || 100;
+        document.getElementById('lowStockThreshold').value = item.lowStockThreshold || 10;
+        document.getElementById('stockStatus').value = item.stockStatus || 'in-stock';
+        
+        // Show image preview if image exists
+        if (item.image && item.image !== 'images/default-food.jpg') {
+            const preview = document.getElementById('imagePreview');
+            const previewImg = document.getElementById('previewImg');
+            if (preview && previewImg) {
+                previewImg.src = item.image;
+                preview.style.display = 'block';
+            }
+        } else {
+            const preview = document.getElementById('imagePreview');
+            if (preview) {
+                preview.style.display = 'none';
+            }
+        }
+        
+        // Show modal
+        const modal = document.getElementById('itemModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            modal.classList.add('show');
+            console.log('✅ Edit modal opened successfully');
+        } else {
+            console.error('❌ Modal element not found');
+        }
+        
     } catch (error) {
         console.error('❌ Failed to edit menu item:', error);
-        alert('Failed to load menu item details');
+        alert('Failed to load menu item details. Please try again.');
     }
 }
 
 function closeItemModal() {
-    document.getElementById('itemModal').style.display = 'none';
+    const modal = document.getElementById('itemModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('show');
+        console.log('✅ Item modal closed');
+    }
     editingItemId = null;
 }
 
@@ -1428,6 +1499,16 @@ window.useSelectedImage = useSelectedImage;
 window.removeImagePreview = removeImagePreview;
 window.selectSampleImage = selectSampleImage;
 window.clearImagePreview = clearImagePreview;
+window.removeItemImage = removeItemImage;
+window.toggleMobileMenu = toggleMobileMenu;
+
+// Mobile menu toggle function
+function toggleMobileMenu() {
+    const navMenu = document.getElementById('adminNavMenu');
+    if (navMenu) {
+        navMenu.classList.toggle('mobile-active');
+    }
+}
 
 // Test function for debugging orders API
 window.testOrdersAPI = async function() {

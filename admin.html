@@ -17,7 +17,10 @@
                 <h2>24x7 Admin</h2>
                 <span>Cafe Management</span>
             </div>
-            <div class="admin-nav-menu">
+            <div class="mobile-menu-toggle" onclick="toggleMobileMenu()">
+                <i class="fas fa-bars"></i>
+            </div>
+            <div class="admin-nav-menu" id="adminNavMenu">
                 <a href="index.html" class="nav-link">
                     <i class="fas fa-home"></i>
                     Back to Site
@@ -394,6 +397,9 @@
                             </button>
                             <button type="button" class="browse-btn" onclick="showImageGallery()">
                                 <i class="fas fa-images"></i> Browse Gallery
+                            </button>
+                            <button type="button" class="remove-image-btn-main" onclick="removeItemImage()" style="background: #e74c3c;">
+                                <i class="fas fa-trash"></i> Remove Image
                             </button>
                         </div>
                         <div class="image-preview" id="imagePreview" style="display: none;">
