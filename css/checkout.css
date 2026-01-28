@@ -235,6 +235,599 @@
     color: #333;
 }
 
+/* Enhanced UPI Payment Interface */
+.upi-step {
+    display: none;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.upi-step.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.step-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.step-number {
+    width: 35px;
+    height: 35px;
+    background: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.step-header h5 {
+    color: #333;
+    font-size: 1.2rem;
+    margin: 0;
+    font-weight: 600;
+}
+
+/* UPI Payment Info */
+.upi-payment-info {
+    margin-bottom: 30px;
+}
+
+.upi-qr-section {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 30px;
+    align-items: start;
+    margin-bottom: 25px;
+}
+
+.upi-qr {
+    position: relative;
+    text-align: center;
+}
+
+.upi-qr img {
+    width: 180px;
+    height: 180px;
+    border: 3px solid #e0e0e0;
+    border-radius: 15px;
+    background: #f8f9fa;
+}
+
+.qr-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(231, 76, 60, 0.9);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 15px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.upi-qr:hover .qr-overlay {
+    opacity: 1;
+}
+
+.qr-overlay i {
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+.qr-overlay p {
+    font-weight: 600;
+    margin: 0;
+}
+
+.upi-info-card {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #e9ecef;
+    margin-bottom: 20px;
+}
+
+.upi-info-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.upi-info-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.upi-info-item i {
+    width: 35px;
+    height: 35px;
+    background: #e74c3c;
+    color: white;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.upi-info-item div {
+    flex: 1;
+}
+
+.upi-info-item label {
+    display: block;
+    font-size: 0.8rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.upi-info-item span {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.upi-id {
+    font-family: 'Courier New', monospace;
+    background: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+}
+
+.upi-amount {
+    color: #e74c3c !important;
+    font-size: 1.3rem !important;
+}
+
+.copy-btn {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    margin-left: 8px;
+    transition: all 0.3s;
+}
+
+.copy-btn:hover {
+    background: #2980b9;
+}
+
+.payment-instructions {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.payment-instructions h6 {
+    color: #856404;
+    margin-bottom: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.payment-instructions ol {
+    margin: 0;
+    padding-left: 20px;
+    color: #856404;
+}
+
+.payment-instructions li {
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.payment-instructions strong {
+    color: #333;
+}
+
+.payment-actions {
+    text-align: center;
+    margin-top: 25px;
+}
+
+.btn-payment-done {
+    background: #27ae60;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-payment-done:hover {
+    background: #229954;
+    transform: translateY(-2px);
+}
+
+/* Screenshot Upload Section */
+.screenshot-upload-section {
+    margin-bottom: 30px;
+}
+
+.upload-area {
+    border: 3px dashed #3498db;
+    border-radius: 15px;
+    padding: 40px 20px;
+    text-align: center;
+    background: #f8f9fa;
+    transition: all 0.3s;
+    cursor: pointer;
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.upload-area:hover,
+.upload-area.drag-over {
+    background: #e3f2fd;
+    border-color: #2980b9;
+    transform: translateY(-2px);
+}
+
+.upload-icon i {
+    font-size: 3rem;
+    color: #3498db;
+    margin-bottom: 15px;
+}
+
+.upload-text h6 {
+    color: #333;
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.upload-text p {
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.upload-text small {
+    color: #999;
+    font-size: 0.85rem;
+}
+
+.browse-btn {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.browse-btn:hover {
+    background: #2980b9;
+}
+
+/* Screenshot Preview */
+.screenshot-preview {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.preview-header h6 {
+    color: #333;
+    margin: 0;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.remove-screenshot {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.remove-screenshot:hover {
+    background: #c0392b;
+}
+
+.preview-image {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.preview-image img {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.screenshot-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.file-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.file-name {
+    font-weight: 600;
+    color: #333;
+}
+
+.file-size {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.upload-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #27ae60;
+    font-weight: 600;
+}
+
+.upload-status i {
+    font-size: 1.2rem;
+}
+
+/* Screenshot Requirements */
+.screenshot-requirements {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.screenshot-requirements h6 {
+    color: #856404;
+    margin-bottom: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.screenshot-requirements ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.screenshot-requirements li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    color: #856404;
+}
+
+.screenshot-requirements li:last-child {
+    margin-bottom: 0;
+}
+
+.screenshot-requirements li i {
+    color: #27ae60;
+    font-size: 0.9rem;
+}
+
+/* Screenshot Actions */
+.screenshot-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: space-between;
+}
+
+.btn-back,
+.btn-verify {
+    flex: 1;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+}
+
+.btn-back {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-back:hover {
+    background: #7f8c8d;
+}
+
+.btn-verify {
+    background: #27ae60;
+    color: white;
+}
+
+.btn-verify:hover:not(:disabled) {
+    background: #229954;
+}
+
+.btn-verify:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+}
+
+/* Verification Section */
+.verification-section {
+    text-align: center;
+}
+
+.verification-status {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: #e8f5e8;
+    border: 1px solid #c3e6c3;
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 25px;
+}
+
+.status-icon {
+    width: 60px;
+    height: 60px;
+    background: #27ae60;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    animation: pulse 2s infinite;
+}
+
+.status-text {
+    flex: 1;
+    text-align: left;
+}
+
+.status-text h6 {
+    color: #27ae60;
+    font-size: 1.2rem;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.status-text p {
+    color: #666;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.verification-details {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.detail-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.detail-item label {
+    color: #666;
+    font-weight: 500;
+}
+
+.detail-item span {
+    font-weight: 600;
+    color: #333;
+}
+
+.screenshot-status {
+    color: #27ae60 !important;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.verification-note {
+    background: #e3f2fd;
+    border: 1px solid #bbdefb;
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.verification-note i {
+    color: #3498db;
+    font-size: 1.2rem;
+    margin-top: 2px;
+}
+
+.verification-note p {
+    margin: 0;
+    color: #666;
+    line-height: 1.4;
+}
+
 /* Order Summary Checkout */
 .order-summary-checkout {
     position: sticky;
@@ -798,6 +1391,57 @@
         flex-direction: column;
         gap: 20px;
         text-align: center;
+    }
+    
+    .upi-qr-section {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        text-align: center;
+    }
+    
+    .upi-qr img {
+        width: 150px;
+        height: 150px;
+    }
+    
+    .upi-info-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+    
+    .screenshot-actions {
+        flex-direction: column;
+    }
+    
+    .verification-status {
+        flex-direction: column;
+        text-align: center;
+        gap: 15px;
+    }
+    
+    .status-text {
+        text-align: center;
+    }
+    
+    .upload-area {
+        padding: 30px 15px;
+    }
+    
+    .upload-icon i {
+        font-size: 2.5rem;
+    }
+    
+    .upload-text h6 {
+        font-size: 1.1rem;
+    }
+    
+    .payment-instructions {
+        padding: 15px;
+    }
+    
+    .screenshot-requirements {
+        padding: 15px;
     }
     
     .success-actions {

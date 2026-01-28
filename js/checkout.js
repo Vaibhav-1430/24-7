@@ -1,4 +1,7 @@
 // Checkout Page Functionality
+let paymentScreenshot = null;
+let currentUpiStep = 1;
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('💳 Checkout page loading...');
     
@@ -36,6 +39,7 @@ function initializeCheckoutPage() {
         initializeCheckout();
         loadOrderSummary();
         setupEventListeners();
+        initializeUpiUpload();
     });
 }
 
@@ -85,22 +89,244 @@ function handlePaymentMethodChange(e) {
     
     if (e.target.value === 'upi') {
         upiSection.style.display = 'block';
-        transactionIdInput.required = true;
+        transactionIdInput.required = false; // Not required initially
         updateUpiAmount();
+        resetUpiFlow();
     } else {
         upiSection.style.display = 'none';
         transactionIdInput.required = false;
+        paymentScreenshot = null;
+        currentUpiStep = 1;
     }
     
     validateForm();
 }
 
+function resetUpiFlow() {
+    currentUpiStep = 1;
+    paymentScreenshot = null;
+    
+    // Reset all steps
+    document.querySelectorAll('.upi-step').forEach(step => {
+        step.classList.remove('active');
+    });
+    document.getElementById('upiStep1').classList.add('active');
+    
+    // Reset screenshot upload
+    const screenshotPreview = document.getElementById('screenshotPreview');
+    const uploadArea = document.getElementById('screenshotUploadArea');
+    const screenshotInput = document.getElementById('screenshotInput');
+    
+    if (screenshotPreview) screenshotPreview.style.display = 'none';
+    if (uploadArea) uploadArea.style.display = 'block';
+    if (screenshotInput) screenshotInput.value = '';
+    
+    // Reset verify button
+    const verifyBtn = document.getElementById('verifyScreenshotBtn');
+    if (verifyBtn) verifyBtn.disabled = true;
+}
+
 function updateUpiAmount() {
     const total = calculateTotal();
-    const upiAmountEl = document.getElementById('upiAmount');
-    if (upiAmountEl) {
-        upiAmountEl.textContent = total;
+    const upiAmountElements = document.querySelectorAll('#upiAmount, .amount-display');
+    upiAmountElements.forEach(el => {
+        el.textContent = total;
+    });
+}
+
+// UPI Payment Flow Functions
+function proceedToScreenshot() {
+    currentUpiStep = 2;
+    showUpiStep(2);
+}
+
+function backToPayment() {
+    currentUpiStep = 1;
+    showUpiStep(1);
+}
+
+function showUpiStep(stepNumber) {
+    // Hide all steps
+    document.querySelectorAll('.upi-step').forEach(step => {
+        step.classList.remove('active');
+    });
+    
+    // Show selected step
+    const targetStep = document.getElementById(`upiStep${stepNumber}`);
+    if (targetStep) {
+        targetStep.classList.add('active');
     }
+    
+    currentUpiStep = stepNumber;
+    validateForm();
+}
+
+function verifyScreenshot() {
+    if (!paymentScreenshot) {
+        alert('Please upload a payment screenshot first');
+        return;
+    }
+    
+    // Get transaction ID if provided
+    const transactionId = document.getElementById('transactionId').value.trim();
+    
+    // Update verification details
+    if (transactionId) {
+        const transactionDetail = document.getElementById('transactionDetail');
+        const displayTransactionId = document.getElementById('displayTransactionId');
+        if (transactionDetail && displayTransactionId) {
+            displayTransactionId.textContent = transactionId;
+            transactionDetail.style.display = 'flex';
+        }
+    }
+    
+    // Move to verification step
+    currentUpiStep = 3;
+    showUpiStep(3);
+}
+
+// Screenshot Upload Functions
+function initializeUpiUpload() {
+    const screenshotInput = document.getElementById('screenshotInput');
+    const uploadArea = document.getElementById('screenshotUploadArea');
+    
+    if (screenshotInput) {
+        screenshotInput.addEventListener('change', handleScreenshotSelect);
+    }
+    
+    if (uploadArea) {
+        // Drag and drop functionality
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+        
+        uploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+        });
+        
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleScreenshotFile(files[0]);
+            }
+        });
+        
+        // Click to upload
+        uploadArea.addEventListener('click', function(e) {
+            if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') {
+                screenshotInput.click();
+            }
+        });
+    }
+}
+
+function handleScreenshotSelect(e) {
+    const file = e.target.files[0];
+    if (file) {
+        handleScreenshotFile(file);
+    }
+}
+
+function handleScreenshotFile(file) {
+    console.log('📸 Processing screenshot file:', file.name, file.type, file.size);
+    
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+        alert('Please select an image file (JPG, PNG, WebP)');
+        return;
+    }
+    
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        alert('File size must be less than 5MB');
+        return;
+    }
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        console.log('📸 Screenshot loaded successfully');
+        paymentScreenshot = {
+            file: file,
+            dataUrl: e.target.result,
+            name: file.name,
+            size: file.size
+        };
+        showScreenshotPreview();
+    };
+    reader.onerror = function() {
+        console.error('❌ Failed to read screenshot file');
+        alert('Failed to read the selected file');
+    };
+    reader.readAsDataURL(file);
+}
+
+function showScreenshotPreview() {
+    const uploadArea = document.getElementById('screenshotUploadArea');
+    const previewArea = document.getElementById('screenshotPreview');
+    const previewImg = document.getElementById('screenshotImg');
+    const fileName = document.getElementById('screenshotFileName');
+    const fileSize = document.getElementById('screenshotFileSize');
+    const verifyBtn = document.getElementById('verifyScreenshotBtn');
+    
+    if (uploadArea) uploadArea.style.display = 'none';
+    if (previewArea) previewArea.style.display = 'block';
+    
+    if (previewImg) previewImg.src = paymentScreenshot.dataUrl;
+    if (fileName) fileName.textContent = paymentScreenshot.name;
+    if (fileSize) fileSize.textContent = formatFileSize(paymentScreenshot.size);
+    if (verifyBtn) verifyBtn.disabled = false;
+    
+    console.log('📸 Screenshot preview displayed');
+}
+
+function removeScreenshot() {
+    paymentScreenshot = null;
+    
+    const uploadArea = document.getElementById('screenshotUploadArea');
+    const previewArea = document.getElementById('screenshotPreview');
+    const screenshotInput = document.getElementById('screenshotInput');
+    const verifyBtn = document.getElementById('verifyScreenshotBtn');
+    
+    if (uploadArea) uploadArea.style.display = 'block';
+    if (previewArea) previewArea.style.display = 'none';
+    if (screenshotInput) screenshotInput.value = '';
+    if (verifyBtn) verifyBtn.disabled = true;
+    
+    console.log('📸 Screenshot removed');
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Utility Functions
+function copyUpiId() {
+    const upiId = '247restaurant@paytm';
+    navigator.clipboard.writeText(upiId).then(() => {
+        // Show temporary feedback
+        const copyBtn = event.target.closest('.copy-btn');
+        const originalIcon = copyBtn.innerHTML;
+        copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+        copyBtn.style.color = '#27ae60';
+        
+        setTimeout(() => {
+            copyBtn.innerHTML = originalIcon;
+            copyBtn.style.color = '';
+        }, 2000);
+        
+        console.log('📋 UPI ID copied to clipboard');
+    }).catch(() => {
+        // Fallback for older browsers
+        alert(`UPI ID: ${upiId}\n\nCopied to clipboard!`);
+    });
 }
 
 function loadOrderSummary() {
@@ -182,11 +408,28 @@ function validateForm() {
     }
     
     // Check if all required fields are filled
-    const isValid = Array.from(requiredFields).every(field => {
+    let isValid = Array.from(requiredFields).every(field => {
         return field.value.trim() !== '';
     });
     
+    // Additional validation for UPI payment
+    if (paymentMethod === 'upi') {
+        // UPI payment requires screenshot upload and verification step completion
+        isValid = isValid && currentUpiStep === 3 && paymentScreenshot !== null;
+    }
+    
     placeOrderBtn.disabled = !isValid;
+    
+    // Update place order button text based on payment method and step
+    if (paymentMethod === 'upi') {
+        if (currentUpiStep < 3) {
+            placeOrderBtn.innerHTML = '<i class="fas fa-lock"></i> Complete UPI Payment First';
+        } else {
+            placeOrderBtn.innerHTML = '<i class="fas fa-check"></i> Place Order';
+        }
+    } else {
+        placeOrderBtn.innerHTML = '<i class="fas fa-check"></i> Place Order';
+    }
 }
 
 async function handlePlaceOrder() {
@@ -198,6 +441,19 @@ async function handlePlaceOrder() {
     if (!form.checkValidity()) {
         form.reportValidity();
         return;
+    }
+    
+    // Additional UPI validation
+    if (paymentMethod === 'upi') {
+        if (currentUpiStep !== 3) {
+            alert('Please complete the UPI payment process first');
+            return;
+        }
+        
+        if (!paymentScreenshot) {
+            alert('Please upload your payment screenshot');
+            return;
+        }
     }
     
     // Show loading state
@@ -239,7 +495,10 @@ async function handlePlaceOrder() {
             },
             payment: {
                 method: paymentMethod,
-                transactionId: paymentMethod === 'upi' ? formData.get('transactionId') : null
+                transactionId: paymentMethod === 'upi' ? formData.get('transactionId') : null,
+                screenshot: paymentMethod === 'upi' && paymentScreenshot ? paymentScreenshot.dataUrl : null,
+                screenshotName: paymentMethod === 'upi' && paymentScreenshot ? paymentScreenshot.name : null,
+                verified: paymentMethod === 'cod' // COD is auto-verified, UPI needs manual verification
             },
             pricing: {
                 subtotal: cartManagerClean.getTotal(),
@@ -248,7 +507,13 @@ async function handlePlaceOrder() {
             }
         };
         
-        console.log('💳 Placing order via API:', orderData);
+        console.log('💳 Placing order via API:', {
+            ...orderData,
+            payment: {
+                ...orderData.payment,
+                screenshot: orderData.payment.screenshot ? '[BASE64_DATA]' : null
+            }
+        });
         
         // Create order via API
         const createdOrder = await apiClient.createOrder(orderData);
@@ -496,6 +761,31 @@ window.addEventListener('click', function(e) {
     const modal = document.getElementById('orderSuccessModal');
     if (e.target === modal) {
         closeModalWithAnimation();
+    }
+});
+
+// Ensure modal closes properly with Escape key
+window.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('orderSuccessModal');
+        if (modal && modal.classList.contains('show')) {
+            closeModalWithAnimation();
+        }
+    }
+});
+
+// Global functions for UPI payment flow
+window.proceedToScreenshot = proceedToScreenshot;
+window.backToPayment = backToPayment;
+window.verifyScreenshot = verifyScreenshot;
+window.removeScreenshot = removeScreenshot;
+window.copyUpiId = copyUpiId;
+
+// Close modal when clicking outside
+window.addEventListener('click', function(e) {
+    const modal = document.getElementById('orderSuccessModal');
+    if (e.target === modal) {
+        closeOrderSuccessModal();
     }
 });
 

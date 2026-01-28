@@ -25,7 +25,10 @@ const orderSchema = new mongoose.Schema({
     },
     payment: {
         method: { type: String, required: true, enum: ['cod', 'upi'] },
-        transactionId: { type: String }
+        transactionId: { type: String },
+        screenshot: { type: String }, // Base64 encoded screenshot for UPI payments
+        screenshotName: { type: String }, // Original filename
+        verified: { type: Boolean, default: false } // Payment verification status
     },
     pricing: {
         subtotal: { type: Number, required: true, min: 0 },
@@ -38,7 +41,8 @@ const orderSchema = new mongoose.Schema({
         default: 'pending' 
     },
     orderTime: { type: Date, default: Date.now },
-    estimatedDelivery: { type: Date }
+    estimatedDelivery: { type: Date },
+    paymentVerificationNotes: { type: String } // Admin notes for payment verification
 }, { timestamps: true });
 
 // Global connection cache
@@ -225,11 +229,43 @@ async function createOrder(userId, orderData, headers) {
             };
         }
 
+        // Validate UPI payment requirements
+        if (payment.method === 'upi') {
+            if (!payment.screenshot) {
+                return {
+                    statusCode: 400,
+                    headers,
+                    body: JSON.stringify({
+                        success: false,
+                        message: 'Payment screenshot is required for UPI payments'
+                    })
+                };
+            }
+            
+            // Validate screenshot data
+            if (!payment.screenshot.startsWith('data:image/')) {
+                return {
+                    statusCode: 400,
+                    headers,
+                    body: JSON.stringify({
+                        success: false,
+                        message: 'Invalid screenshot format'
+                    })
+                };
+            }
+        }
+
         // Generate order number
         const orderNumber = generateOrderNumber();
 
         // Calculate estimated delivery time (30 minutes from now)
         const estimatedDelivery = new Date(Date.now() + 30 * 60 * 1000);
+
+        // Set initial status based on payment method
+        let initialStatus = 'pending';
+        if (payment.method === 'upi' && !payment.verified) {
+            initialStatus = 'pending'; // UPI orders stay pending until payment is verified
+        }
 
         // Create order
         const order = new Order({
@@ -238,25 +274,36 @@ async function createOrder(userId, orderData, headers) {
             items,
             contact,
             delivery,
-            payment,
+            payment: {
+                method: payment.method,
+                transactionId: payment.transactionId || null,
+                screenshot: payment.screenshot || null,
+                screenshotName: payment.screenshotName || null,
+                verified: payment.verified || false
+            },
             pricing,
-            status: 'pending',
+            status: initialStatus,
             orderTime: new Date(),
             estimatedDelivery
         });
 
         await order.save();
 
-        console.log(`✅ Order created successfully: ${orderNumber} for user ${userId}`);
+        console.log(`✅ Order created successfully: ${orderNumber} for user ${userId} (Payment: ${payment.method}${payment.method === 'upi' ? ', Screenshot: ' + (payment.screenshot ? 'Yes' : 'No') : ''})`);
 
-        // Return order data
+        // Return order data (exclude screenshot from response for size)
         const orderResponse = {
             id: order._id,
             orderNumber: order.orderNumber,
             items: order.items,
             contact: order.contact,
             delivery: order.delivery,
-            payment: order.payment,
+            payment: {
+                method: order.payment.method,
+                transactionId: order.payment.transactionId,
+                verified: order.payment.verified,
+                hasScreenshot: !!order.payment.screenshot
+            },
             pricing: order.pricing,
             status: order.status,
             orderTime: order.orderTime,
@@ -292,7 +339,12 @@ async function getOrders(userId, headers) {
             items: order.items,
             contact: order.contact,
             delivery: order.delivery,
-            payment: order.payment,
+            payment: {
+                method: order.payment.method,
+                transactionId: order.payment.transactionId,
+                verified: order.payment.verified,
+                hasScreenshot: !!order.payment.screenshot
+            },
             pricing: order.pricing,
             status: order.status,
             orderTime: order.orderTime,

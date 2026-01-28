@@ -144,19 +144,186 @@
 
                         <!-- UPI Payment Details (Hidden by default) -->
                         <div class="form-section" id="upiSection" style="display: none;">
-                            <h4>UPI Payment Details</h4>
-                            <div class="upi-info">
-                                <div class="upi-qr">
-                                    <img src="images/upi-qr-code.png" alt="UPI QR Code">
-                                    <p>Scan QR code to pay</p>
+                            <h4><i class="fas fa-mobile-alt"></i> UPI Payment Process</h4>
+                            
+                            <!-- Step 1: Payment Information -->
+                            <div class="upi-step active" id="upiStep1">
+                                <div class="step-header">
+                                    <span class="step-number">1</span>
+                                    <h5>Scan QR Code & Pay</h5>
                                 </div>
-                                <div class="upi-details">
-                                    <p><strong>UPI ID:</strong> 247restaurant@paytm</p>
-                                    <p><strong>Amount:</strong> ₹<span id="upiAmount">0</span></p>
+                                <div class="upi-payment-info">
+                                    <div class="upi-qr-section">
+                                        <div class="upi-qr">
+                                            <img src="images/upi-qr-code.png" alt="UPI QR Code" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDE1MCAxNTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxNTAiIGhlaWdodD0iMTUwIiBmaWxsPSIjZjhmOWZhIiBzdHJva2U9IiNlMGUwZTAiIHN0cm9rZS13aWR0aD0iMiIvPgo8dGV4dCB4PSI3NSIgeT0iNzAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiM2NjYiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMiI+VVBJIFFSIENvZGU8L3RleHQ+Cjx0ZXh0IHg9Ijc1IiB5PSI5MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0iIzk5OSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjEwIj5TY2FuIHRvIFBheTwvdGV4dD4KPC9zdmc+'">
+                                            <div class="qr-overlay">
+                                                <i class="fas fa-qrcode"></i>
+                                                <p>Scan to Pay</p>
+                                            </div>
+                                        </div>
+                                        <div class="upi-details">
+                                            <div class="upi-info-card">
+                                                <div class="upi-info-item">
+                                                    <i class="fas fa-mobile-alt"></i>
+                                                    <div>
+                                                        <label>UPI ID</label>
+                                                        <span class="upi-id">247restaurant@paytm</span>
+                                                        <button type="button" class="copy-btn" onclick="copyUpiId()">
+                                                            <i class="fas fa-copy"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div class="upi-info-item">
+                                                    <i class="fas fa-rupee-sign"></i>
+                                                    <div>
+                                                        <label>Amount to Pay</label>
+                                                        <span class="upi-amount">₹<span id="upiAmount">0</span></span>
+                                                    </div>
+                                                </div>
+                                                <div class="upi-info-item">
+                                                    <i class="fas fa-store"></i>
+                                                    <div>
+                                                        <label>Merchant</label>
+                                                        <span>24x7 Cafe</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="payment-instructions">
+                                                <h6><i class="fas fa-info-circle"></i> How to Pay:</h6>
+                                                <ol>
+                                                    <li>Open any UPI app (PhonePe, Paytm, GPay, etc.)</li>
+                                                    <li>Scan the QR code or use UPI ID: <strong>247restaurant@paytm</strong></li>
+                                                    <li>Enter amount: <strong>₹<span class="amount-display">0</span></strong></li>
+                                                    <li>Complete the payment</li>
+                                                    <li>Take a screenshot of payment confirmation</li>
+                                                </ol>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="payment-actions">
+                                        <button type="button" class="btn-payment-done" onclick="proceedToScreenshot()">
+                                            <i class="fas fa-check"></i>
+                                            I've Made the Payment
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Step 2: Screenshot Upload -->
+                            <div class="upi-step" id="upiStep2">
+                                <div class="step-header">
+                                    <span class="step-number">2</span>
+                                    <h5>Upload Payment Screenshot</h5>
+                                </div>
+                                <div class="screenshot-upload-section">
+                                    <div class="upload-area" id="screenshotUploadArea">
+                                        <div class="upload-icon">
+                                            <i class="fas fa-cloud-upload-alt"></i>
+                                        </div>
+                                        <div class="upload-text">
+                                            <h6>Upload Payment Screenshot</h6>
+                                            <p>Drag & drop your screenshot here or click to browse</p>
+                                            <small>Supported formats: JPG, PNG, WebP (Max 5MB)</small>
+                                        </div>
+                                        <input type="file" id="screenshotInput" accept="image/*" style="display: none;">
+                                        <button type="button" class="browse-btn" onclick="document.getElementById('screenshotInput').click()">
+                                            <i class="fas fa-folder-open"></i>
+                                            Choose File
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="screenshot-preview" id="screenshotPreview" style="display: none;">
+                                        <div class="preview-header">
+                                            <h6><i class="fas fa-image"></i> Payment Screenshot</h6>
+                                            <button type="button" class="remove-screenshot" onclick="removeScreenshot()">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                        <div class="preview-image">
+                                            <img id="screenshotImg" src="" alt="Payment Screenshot">
+                                        </div>
+                                        <div class="screenshot-info">
+                                            <div class="file-info">
+                                                <span class="file-name" id="screenshotFileName">screenshot.jpg</span>
+                                                <span class="file-size" id="screenshotFileSize">2.3 MB</span>
+                                            </div>
+                                            <div class="upload-status">
+                                                <i class="fas fa-check-circle"></i>
+                                                <span>Ready to submit</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="screenshot-requirements">
+                                        <h6><i class="fas fa-exclamation-triangle"></i> Screenshot Requirements:</h6>
+                                        <ul>
+                                            <li><i class="fas fa-check"></i> Must show successful payment confirmation</li>
+                                            <li><i class="fas fa-check"></i> Amount should match: ₹<span class="amount-display">0</span></li>
+                                            <li><i class="fas fa-check"></i> Transaction ID should be visible</li>
+                                            <li><i class="fas fa-check"></i> Merchant name should show "24x7 Cafe" or UPI ID</li>
+                                        </ul>
+                                    </div>
+                                    
                                     <div class="form-group">
-                                        <label for="transactionId">Transaction ID</label>
+                                        <label for="transactionId">Transaction ID (Optional)</label>
                                         <input type="text" id="transactionId" name="transactionId" 
-                                               placeholder="Enter UPI transaction ID">
+                                               placeholder="Enter UPI transaction ID from screenshot">
+                                        <small>You can find this in your payment app or screenshot</small>
+                                    </div>
+                                    
+                                    <div class="screenshot-actions">
+                                        <button type="button" class="btn-back" onclick="backToPayment()">
+                                            <i class="fas fa-arrow-left"></i>
+                                            Back to Payment
+                                        </button>
+                                        <button type="button" class="btn-verify" id="verifyScreenshotBtn" onclick="verifyScreenshot()" disabled>
+                                            <i class="fas fa-shield-alt"></i>
+                                            Verify & Continue
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Step 3: Verification -->
+                            <div class="upi-step" id="upiStep3">
+                                <div class="step-header">
+                                    <span class="step-number">3</span>
+                                    <h5>Payment Verification</h5>
+                                </div>
+                                <div class="verification-section">
+                                    <div class="verification-status">
+                                        <div class="status-icon">
+                                            <i class="fas fa-clock"></i>
+                                        </div>
+                                        <div class="status-text">
+                                            <h6>Payment Under Verification</h6>
+                                            <p>Your payment screenshot has been uploaded successfully. Our team will verify the payment and confirm your order shortly.</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="verification-details">
+                                        <div class="detail-item">
+                                            <label>Payment Amount</label>
+                                            <span>₹<span class="amount-display">0</span></span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <label>Screenshot</label>
+                                            <span class="screenshot-status">
+                                                <i class="fas fa-check-circle"></i>
+                                                Uploaded Successfully
+                                            </span>
+                                        </div>
+                                        <div class="detail-item" id="transactionDetail" style="display: none;">
+                                            <label>Transaction ID</label>
+                                            <span id="displayTransactionId">-</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="verification-note">
+                                        <i class="fas fa-info-circle"></i>
+                                        <p><strong>Note:</strong> Your order will be confirmed once payment is verified. You'll receive a confirmation message and can track your order status.</p>
                                     </div>
                                 </div>
                             </div>
